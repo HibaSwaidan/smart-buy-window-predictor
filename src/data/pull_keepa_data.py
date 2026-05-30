@@ -15,7 +15,7 @@ TARGET_CATEGORIES = [
     "Toys & Games",
     "Tools & Home Improvement",
     "Sports & Outdoors",
-    "Beauty & Personal Care",
+    "Baby",
 ]
 
 def get_target_category_ids(api):
