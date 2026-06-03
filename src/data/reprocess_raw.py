@@ -51,6 +51,8 @@ MIN_PRICE_STD = 0.5
 PRICE_MIN = 1.0
 PRICE_MAX = 2000.0
 
+# ── NEW price shipping-cost change date ───────────────────────────────────────
+NEW_SHIPPING_INCLUDED_FROM = "2026-02-16"
 
 # ── forward-fill limits ───────────────────────────────────────────────────────
 FFILL_LIMIT_PRICE = 14
@@ -259,6 +261,13 @@ def process_json(json_path: Path):
     df = df[df.index >= "2015-01-01"]
     df.index.name = "date"
 
+    # Flag rows where NEW price may include shipping costs.
+    # # Keepa documentation states that NEW prices did not include shipping before 2026-02-16.
+    df["new_price_shipping_included"] = (
+        (df["price_source"] == "NEW") &
+        (df.index >= NEW_SHIPPING_INCLUDED_FROM)
+    ).astype(int)
+
     # Scalar metadata
     cat_tree = product.get("categoryTree") or []
 
@@ -269,7 +278,7 @@ def process_json(json_path: Path):
     delay_min, delay_max = extract_availability_delay(product)
 
     ms_val = product.get("monthlySold")
-    monthly_sold = float(ms_val) if (ms_val is not None and ms_val != -1) else np.nan
+    monthly_sold = float(ms_val) if (ms_val is not None and ms_val > 0) else np.nan
 
     df["asin"] = asin
     df["title"] = product.get("title", "")
