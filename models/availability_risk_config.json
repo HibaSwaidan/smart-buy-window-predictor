@@ -1,0 +1,36 @@
+{
+    "module_type": "rule_based_availability_risk",
+    "description": "Rule-based availability-risk module using historical/proxy marketplace signals.",
+    "risk_score_rules": {
+        "risk_amazon_missing_recent": {
+            "condition": "amazon_price_raw_missing_rolling_14 >= 0.85",
+            "weight": 1
+        },
+        "risk_not_amazon_source": {
+            "condition": "price_source_amazon == 0",
+            "weight": 2
+        },
+        "risk_price_source_changed": {
+            "condition": "price_source_changed_7d == 1",
+            "weight": 1
+        },
+        "risk_offer_count_missing": {
+            "condition": "offer_count_missing_flag == 1",
+            "weight": 1
+        },
+        "risk_low_offer_count": {
+            "condition": "offer_count <= 2",
+            "weight": 2
+        },
+        "risk_offer_count_declining": {
+            "condition": "offer_count_trend_14 <= -2",
+            "weight": 2
+        }
+    },
+    "risk_level_thresholds": {
+        "LOW": "score 0 to 2",
+        "MEDIUM": "score 3 to 4",
+        "HIGH": "score 5 to 8"
+    },
+    "important_note": "This is an availability-risk proxy, not a supervised stock-out model. It is used because the current dataset does not contain reliable historical daily stock-out labels."
+}
