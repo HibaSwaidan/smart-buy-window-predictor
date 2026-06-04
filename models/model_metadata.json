@@ -1,0 +1,17 @@
+{
+    "model_type": "XGBoost binary classifier",
+    "target": "label_drop_14d",
+    "prediction_horizon": "14 days",
+    "label_definition": "1 if price drops by at least 5% and at least $5 within the next 14 days",
+    "selected_threshold": 0.3,
+    "confident_buy_threshold": 0.25,
+    "confident_wait_threshold": 0.65,
+    "train_period": "2015-01-31 to 2024-12-31",
+    "validation_period": "2025-01-01 to 2025-12-31",
+    "test_period": "2026-01-01 to 2026-05-18",
+    "test_roc_auc": 0.8181438030853838,
+    "test_pr_auc": 0.6576920677465545,
+    "test_f1": 0.6390536115763584,
+    "test_precision": 0.5737043157866218,
+    "test_recall": 0.7212042776377631
+}
