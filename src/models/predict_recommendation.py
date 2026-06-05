@@ -21,19 +21,41 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-MODEL_PATH = PROJECT_ROOT / "models" / "xgb_price_drop_14d_model.joblib"
-FEATURE_COLUMNS_PATH = PROJECT_ROOT / "models" / "feature_columns.json"
-MODEL_METADATA_PATH = PROJECT_ROOT / "models" / "model_metadata.json"
-AVAILABILITY_CONFIG_PATH = PROJECT_ROOT / "models" / "availability_risk_config.json"
+MODELS_DIR = PROJECT_ROOT / "models"
 
+if not MODELS_DIR.exists():
+    raise RuntimeError(f"models/ directory not found at expected path: {MODELS_DIR}")
+
+MODEL_PATH = MODELS_DIR / "xgb_price_drop_14d_model.joblib"
+FEATURE_COLUMNS_PATH = MODELS_DIR / "feature_columns.json"
+MODEL_METADATA_PATH = MODELS_DIR / "model_metadata.json"
+AVAILABILITY_CONFIG_PATH = MODELS_DIR / "availability_risk_config.json"
 
 def load_artifacts():
     """Load model, feature columns, metadata, and availability-risk config."""
+
+    required_files = [
+        MODEL_PATH,
+        FEATURE_COLUMNS_PATH,
+        MODEL_METADATA_PATH,
+        AVAILABILITY_CONFIG_PATH,
+    ]
+
+    missing_files = [str(path) for path in required_files if not path.exists()]
+
+    if missing_files:
+        raise FileNotFoundError(
+            "Missing required model artifact(s): "
+            + ", ".join(missing_files)
+        )
 
     model = joblib.load(MODEL_PATH)
 
     with open(FEATURE_COLUMNS_PATH, "r") as f:
         feature_columns = json.load(f)
+
+    if not isinstance(feature_columns, list):
+        raise TypeError("feature_columns.json must contain a JSON list.")
 
     with open(MODEL_METADATA_PATH, "r") as f:
         metadata = json.load(f)
@@ -44,7 +66,16 @@ def load_artifacts():
     return model, feature_columns, metadata, availability_config
 
 
-MODEL, FEATURE_COLUMNS, MODEL_METADATA, AVAILABILITY_CONFIG = load_artifacts()
+try:
+    MODEL, FEATURE_COLUMNS, MODEL_METADATA, AVAILABILITY_CONFIG = load_artifacts()
+except Exception as e:
+    raise RuntimeError(
+        "Failed to load prediction artifacts. "
+        "Check that the models/ directory contains: "
+        "xgb_price_drop_14d_model.joblib, feature_columns.json, "
+        "model_metadata.json, and availability_risk_config.json. "
+        f"Original error: {e}"
+    )
 
 
 def align_features(product_features: dict) -> pd.DataFrame:
@@ -180,13 +211,27 @@ def build_explanation(
     else:
         explanations.append("Availability risk is low based on current marketplace signals.")
 
-    if final_recommendation == "WAIT":
-        explanations.append("Final recommendation: WAIT because drop probability is high and availability risk is not high.")
-    elif final_recommendation == "BUY_NOW":
-        explanations.append("Final recommendation: BUY NOW because drop probability is low or availability risk is high.")
-    else:
-        explanations.append("Final recommendation: UNCERTAIN because price and availability signals are not strong enough.")
-
+        if final_recommendation == "WAIT":
+            explanations.append(
+                "Final recommendation: WAIT because the model sees a strong chance of a meaningful price drop and availability risk is not high."
+            )
+        elif final_recommendation == "BUY_NOW":
+            if price_zone == "confident_buy":
+                explanations.append(
+                    "Final recommendation: BUY NOW because the model estimates a low chance of a meaningful short-term price drop."
+                )
+            elif availability_result["availability_risk_level"] == "HIGH":
+                explanations.append(
+                    "Final recommendation: BUY NOW because availability risk is high, so waiting may be risky."
+                )
+            else:
+                explanations.append(
+                    "Final recommendation: BUY NOW because the current signals do not support waiting."
+                )
+        else:
+            explanations.append(
+                "Final recommendation: UNCERTAIN because the model is not confident enough to recommend buying now or waiting. Consider checking again in a few days or monitoring the price manually."
+            )
     return explanations
 
 
