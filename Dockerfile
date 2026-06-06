@@ -2,17 +2,17 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements-api.txt .
+
+RUN python -m pip install --upgrade pip && \
+    pip install --no-cache-dir --default-timeout=120 --retries=10 --prefer-binary -r requirements-api.txt
 
 COPY src ./src
 COPY models ./models
-COPY data/sample/sample_features_for_api_testing.csv ./data/sample/
 
 EXPOSE 8000
 

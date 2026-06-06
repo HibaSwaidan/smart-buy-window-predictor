@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+data/raw/
+data/interim/
+data/processed/
+.DS_Store
+.ipynb_checkpoints/
+.git/
+notebooks/
