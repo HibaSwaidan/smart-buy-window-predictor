@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: smart-buy-predictor
+    runtime: image
+    repo: https://github.com/HibaSwaidan/smart-buy-window-predictor
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: KEEPA_API_KEY
+        sync: false
