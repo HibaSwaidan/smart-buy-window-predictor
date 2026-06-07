@@ -239,28 +239,6 @@ function Home({ onAnalyze }) {
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-16">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300">
-            <p className="text-3xl font-bold text-blue-600">2K+</p>
-            <p className="text-gray-500 text-sm mt-2">ASINs Targeted</p>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300">
-            <p className="text-3xl font-bold text-blue-600">8</p>
-            <p className="text-gray-500 text-sm mt-2">Product Categories</p>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300">
-            <p className="text-3xl font-bold text-blue-600">3</p>
-            <p className="text-gray-500 text-sm mt-2">Recommendation Types</p>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300">
-            <p className="text-3xl font-bold text-blue-600">7 / 14 / 30</p>
-            <p className="text-gray-500 text-sm mt-2">Day Prediction Windows</p>
-          </div>
-        </div>
-
         <div className="mt-16 bg-white rounded-3xl border border-gray-200 shadow-sm p-10">
           <div className="text-center mb-10">
             <p className="text-sm font-semibold text-blue-600 mb-2">
