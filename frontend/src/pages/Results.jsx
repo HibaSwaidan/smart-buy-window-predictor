@@ -35,6 +35,9 @@ function MetricRow({ label, value, type }) {
 }
 
 function Results({ data, onReset }) {
+  const riskScore = data.availability_risk?.score ?? 0
+  const riskLevel = data.availability_risk?.level || "UNKNOWN"
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -170,32 +173,35 @@ function Results({ data, onReset }) {
 
             <div className="mb-5 rounded-xl bg-blue-50 border border-blue-100 p-4">
               <p className="text-sm text-blue-700 font-medium">
-                Lowest risk window
+                Current availability risk level
               </p>
 
               <p className="text-2xl font-bold text-blue-700 mt-1">
-                7 Days
+                {riskLevel}
               </p>
             </div>
 
-            <div className="space-y-4">
-              <MetricRow
-                label="Within 7 days"
-                value={data.availability_risk.days_7}
-                type="risk"
-              />
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-600">Risk score</span>
+                <span className="font-semibold text-gray-900">
+                  {riskScore} / 8
+                </span>
+              </div>
 
-              <MetricRow
-                label="Within 14 days"
-                value={data.availability_risk.days_14}
-                type="risk"
-              />
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-green-500"
+                  style={{
+                    width: `${Math.min((riskScore / 8) * 100, 100)}%`,
+                  }}
+                />
+              </div>
 
-              <MetricRow
-                label="Within 30 days"
-                value={data.availability_risk.days_30}
-                type="risk"
-              />
+              <p className="text-xs text-gray-500 mt-3">
+                This score is based on backend risk flags such as missing recent
+                Amazon price, offer-count signals, and price-source changes.
+              </p>
             </div>
           </div>
         </div>
