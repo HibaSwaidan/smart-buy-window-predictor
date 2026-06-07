@@ -1,0 +1,7 @@
+horizon,backtest_type,all_test_rows,decisive_rows,decisive_rate,buy_now_rate,wait_rate,uncertain_rate,avg_price_if_buy_now,avg_price_paid_by_model,avg_oracle_price,avg_saving_vs_buy_now,median_saving_vs_buy_now,avg_regret_vs_oracle,pct_model_saves_money,pct_model_same_price,pct_model_pays_more
+7,optimistic_wait_best_future_price,104506,79181,0.7577,0.7269,0.0308,0.2423,74.94,73.57,72.37,1.37,0.0,1.2,0.0338,0.9655,0.0007
+7,conservative_wait_end_price,104506,79181,0.7577,0.7269,0.0308,0.2423,74.94,73.97,72.37,0.97,0.0,1.6,0.0273,0.9678,0.0048
+14,optimistic_wait_best_future_price,98052,65914,0.6722,0.5684,0.1039,0.3278,74.72,70.34,68.89,4.39,0.0,1.44,0.1354,0.8627,0.0019
+14,conservative_wait_end_price,98052,65914,0.6722,0.5684,0.1039,0.3278,74.72,71.84,68.89,2.88,0.0,2.95,0.1075,0.8718,0.0208
+30,optimistic_wait_best_future_price,83329,51016,0.6122,0.37,0.2422,0.3878,77.9,67.95,66.64,9.95,0.0,1.31,0.3704,0.6267,0.0029
+30,conservative_wait_end_price,83329,51016,0.6122,0.37,0.2422,0.3878,77.9,73.91,66.64,3.99,0.0,7.27,0.2383,0.6771,0.0846

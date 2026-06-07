@@ -1,0 +1,4 @@
+horizon,model,train_rows,validation_rows,test_rows,train_positive_rate,validation_positive_rate,test_positive_rate,best_iteration,selected_threshold,validation_f1,validation_precision,validation_recall,validation_roc_auc,validation_pr_auc,test_accuracy,test_precision,test_recall,test_f1,test_roc_auc,test_pr_auc,test_tn,test_fp,test_fn,test_tp
+7,xgboost_unweighted,1585148,255671,105428,0.1728,0.1841,0.1912,1074,0.25,0.5185,0.4433,0.6244,0.8093,0.507,0.7821,0.4513,0.645,0.531,0.813,0.521,69457,15812,7156,13003
+14,xgboost_unweighted,1585148,255671,98974,0.2699,0.2889,0.2984,712,0.29,0.6228,0.5487,0.7201,0.8138,0.6421,0.7518,0.5651,0.731,0.6374,0.8182,0.6575,52821,16618,7946,21589
+30,xgboost_unweighted,1585148,255647,84246,0.3968,0.4183,0.4253,802,0.33,0.71,0.6363,0.803,0.8205,0.7678,0.7343,0.6535,0.7989,0.7189,0.8225,0.777,33241,15176,7206,28623

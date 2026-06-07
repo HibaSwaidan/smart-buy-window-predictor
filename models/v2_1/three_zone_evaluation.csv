@@ -1,0 +1,10 @@
+horizon,zone,buy_now_threshold,wait_threshold,rows,row_share,actual_drop_rate,avg_predicted_probability
+7,confident_buy_now,0.25,0.65,76613,0.7267,0.0934,0.0879
+7,uncertain,0.25,0.65,25576,0.2426,0.4149,0.4019
+7,confident_wait,0.25,0.65,3239,0.0307,0.7382,0.7585
+14,confident_buy_now,0.25,0.65,56250,0.5683,0.1183,0.114
+14,uncertain,0.25,0.65,32452,0.3279,0.463,0.4349
+14,confident_wait,0.25,0.65,10272,0.1038,0.7649,0.7661
+30,confident_buy_now,0.25,0.65,31168,0.37,0.1435,0.1375
+30,uncertain,0.25,0.65,32690,0.388,0.4523,0.4233
+30,confident_wait,0.25,0.65,20388,0.242,0.8127,0.8022

@@ -8,5 +8,6 @@ data/interim/
 data/processed/
 models/*.pkl
 models/*.joblib
+models/**/*.joblib
 .DS_Store
 .ipynb_checkpoints
