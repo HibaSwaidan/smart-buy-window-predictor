@@ -1,5 +1,9 @@
+import { useState } from "react"
 import Verdict from "../components/Verdict"
 import PriceChart from "../components/PriceChart"
+import TrackProductModal from "../components/TrackProductModal"
+import TrackedProductsModal from "../components/TrackedProductsModal"
+import { trackProduct, getTrackedProducts, stopTracking } from "../services/api"
 
 function getRecommendationTheme(recommendation) {
   if (recommendation === "buy") {
@@ -53,7 +57,10 @@ function formatRiskFlag(key) {
 
   return (
     labels[key] ||
-    key.replace("risk_", "").replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    key
+      .replace("risk_", "")
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
   )
 }
 
@@ -139,11 +146,53 @@ function HorizonCard({ prediction, isSelected }) {
 }
 
 function Results({ data, onReset }) {
+  const [showTrackModal, setShowTrackModal] = useState(false)
+  const [showTrackedProductsModal, setShowTrackedProductsModal] = useState(false)
+  const [trackedProducts, setTrackedProducts] = useState([])
+  const [trackedProductsLoading, setTrackedProductsLoading] = useState(false)
+  const [trackedProductsError, setTrackedProductsError] = useState("")
   const riskScore = data.availability_risk?.score ?? 0
   const riskLevel = data.availability_risk?.level || "UNKNOWN"
   const riskFlags = data.availability_risk?.flags || {}
   const activeRiskFlags = Object.entries(riskFlags).filter(([, value]) => value === 1)
   const horizonPredictions = data.horizon_predictions || []
+
+  const handleTrackSubmit = async (payload) => {
+    return await trackProduct(payload)
+  }
+
+  const handleOpenTrackedProducts = async () => {
+  setShowTrackedProductsModal(true)
+  setTrackedProductsLoading(true)
+  setTrackedProductsError("")
+
+  try {
+    const response = await getTrackedProducts()
+    setTrackedProducts(response.items || [])
+  } catch (err) {
+    setTrackedProductsError(
+      err.message || "Could not load tracked products."
+    )
+  } finally {
+    setTrackedProductsLoading(false)
+  }
+}
+
+const handleStopTracking = async (trackingId) => {
+  try {
+    const updated = await stopTracking(trackingId)
+
+    setTrackedProducts((currentItems) =>
+      currentItems.map((item) =>
+        item.id === trackingId ? updated : item
+      )
+    )
+  } catch (err) {
+    setTrackedProductsError(
+      err.message || "Could not stop tracking this product."
+    )
+  }
+}
 
   const windowLabel =
     data.recommendation === "buy"
@@ -249,6 +298,33 @@ function Results({ data, onReset }) {
           recommended_window={data.recommended_window}
           bestHorizon={data.best_horizon}
         />
+
+        <div className="bg-white rounded-3xl border border-gray-200 p-6 text-center shadow-sm">
+  <h3 className="text-lg font-bold text-gray-900">
+    Want to monitor this product?
+  </h3>
+
+  <p className="text-sm text-gray-500 mt-2">
+    Track this item and get notified later when it reaches your target price
+    or shows a meaningful drop.
+  </p>
+
+  <div className="mt-5 flex flex-col sm:flex-row justify-center gap-3">
+    <button
+      onClick={() => setShowTrackModal(true)}
+      className="bg-green-600 text-white px-8 py-3 rounded-xl text-sm font-semibold hover:bg-green-700 hover:-translate-y-0.5 transition-all duration-300 shadow-sm"
+    >
+      Track This Product
+    </button>
+
+    <button
+      onClick={handleOpenTrackedProducts}
+      className="bg-white text-blue-700 border border-blue-100 px-8 py-3 rounded-xl text-sm font-semibold hover:bg-blue-50 hover:-translate-y-0.5 transition-all duration-300 shadow-sm"
+    >
+      View Tracked Products
+    </button>
+  </div>
+</div>
 
         <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
           <div className="mb-5">
@@ -375,16 +451,33 @@ function Results({ data, onReset }) {
             Analyze Another Product
           </button>
         </div>
-      <footer className="text-center text-xs text-gray-400 pb-4">
-  <p>
-    Smart Buy Window · Purchase Timing Intelligence
-  </p>
-  <p className="mt-1">
-    Powered by historical pricing signals, availability risk, and multi-horizon machine learning.
-  </p>
-</footer>
 
+        <footer className="text-center text-xs text-gray-400 pb-4">
+          <p>Smart Buy Window · Purchase Timing Intelligence</p>
+          <p className="mt-1">
+            Powered by historical pricing signals, availability risk, and
+            multi-horizon machine learning.
+          </p>
+        </footer>
       </div>
+
+      {showTrackModal && (
+        <TrackProductModal
+          product={data}
+          onClose={() => setShowTrackModal(false)}
+          onSubmit={handleTrackSubmit}
+        />
+      )}
+
+      {showTrackedProductsModal && (
+  <TrackedProductsModal
+    items={trackedProducts}
+    loading={trackedProductsLoading}
+    error={trackedProductsError}
+    onClose={() => setShowTrackedProductsModal(false)}
+    onStopTracking={handleStopTracking}
+  />
+)}
     </div>
   )
 }

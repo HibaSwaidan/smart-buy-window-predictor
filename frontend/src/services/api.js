@@ -171,3 +171,62 @@ export const analyzeProduct = async (urlOrAsin) => {
     price_history: data.price_history || [],
   }
 }
+export const trackProduct = async (trackingData) => {
+  let response
+
+  try {
+    response = await fetch(`${API_BASE_URL}/track`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(trackingData),
+    })
+  } catch {
+    const error = new Error(
+      "Unable to connect to the tracking service. Please try again later."
+    )
+    error.status = 0
+    throw error
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null)
+
+    const message =
+      errorData?.detail ||
+      errorData?.message ||
+      `Tracking request failed with status ${response.status}`
+
+    const error = new Error(message)
+    error.status = response.status
+    throw error
+  }
+
+  return response.json()
+}
+
+export const getTrackedProducts = async () => {
+  const response = await fetch(`${API_BASE_URL}/tracking`)
+
+  if (!response.ok) {
+    throw new Error("Failed to load tracked products")
+  }
+
+  return await response.json()
+}
+
+export const stopTracking = async (trackingId) => {
+  const response = await fetch(
+    `${API_BASE_URL}/tracking/${trackingId}`,
+    {
+      method: "DELETE",
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to stop tracking")
+  }
+
+  return await response.json()
+}
