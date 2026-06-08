@@ -1,8 +1,7 @@
 # src/features/live_feature_builder.py
 
 from pathlib import Path
-from datetime import datetime, timedelta
-from typing import Any, Dict, Tuple, List
+from typing import Any, Dict, Tuple, List, Optional
 
 import json
 import numpy as np
@@ -10,6 +9,7 @@ import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 V2_FEATURE_COLUMNS_PATH = PROJECT_ROOT / "models" / "v2_1" / "feature_columns.json"
 MVP_FEATURE_COLUMNS_PATH = PROJECT_ROOT / "models" / "feature_columns.json"
 
@@ -35,9 +35,9 @@ def _series_from_keepa_data(data: dict, value_key: str, time_key: str) -> pd.Dat
     values = data.get(value_key, [])
     times = data.get(time_key, [])
 
-    # Convert Keepa outputs safely to lists because they may be NumPy arrays
     if values is None:
         values = []
+
     if times is None:
         times = []
 
@@ -49,14 +49,13 @@ def _series_from_keepa_data(data: dict, value_key: str, time_key: str) -> pd.Dat
 
     temp = pd.DataFrame({
         "datetime": pd.to_datetime(times, errors="coerce"),
-        value_key: pd.to_numeric(values, errors="coerce")
+        value_key: pd.to_numeric(values, errors="coerce"),
     })
 
     temp = temp.dropna(subset=["datetime"])
     temp["date"] = temp["datetime"].dt.date
     temp["date"] = pd.to_datetime(temp["date"])
 
-    # Keep the last observed value for each day
     temp = (
         temp.sort_values("datetime")
         .groupby("date", as_index=False)
@@ -71,10 +70,54 @@ def _get_root_category(product: Dict[str, Any]) -> str:
 
     if isinstance(category_tree, list) and len(category_tree) > 0:
         first = category_tree[0]
+
         if isinstance(first, dict):
             return first.get("name", "Unknown")
 
     return "Unknown"
+
+
+def _get_product_image_url(product: Dict[str, Any]) -> Optional[str]:
+    """
+    Extract a product image URL from the Keepa product response.
+
+    Preferred source:
+        product["images"], using the large image filename if available.
+
+    Fallback source:
+        product["imagesCSV"], using the first image filename.
+    """
+
+    images = product.get("images")
+
+    if isinstance(images, list) and len(images) > 0:
+        first_image = images[0]
+
+        if isinstance(first_image, dict):
+            image_name = first_image.get("l") or first_image.get("m")
+
+            if isinstance(image_name, str) and image_name.strip():
+                return f"https://m.media-amazon.com/images/I/{image_name.strip()}"
+
+    images_csv = product.get("imagesCSV")
+
+    if isinstance(images_csv, str) and images_csv.strip():
+        image_name = images_csv.split(",")[0].strip()
+
+        if image_name:
+            return f"https://m.media-amazon.com/images/I/{image_name}"
+
+    image = product.get("image")
+
+    if isinstance(image, str) and image.strip():
+        image_name = image.strip()
+
+        if image_name.startswith("http"):
+            return image_name
+
+        return f"https://m.media-amazon.com/images/I/{image_name}"
+
+    return None
 
 
 def _get_black_friday(year: int) -> pd.Timestamp:
@@ -82,6 +125,7 @@ def _get_black_friday(year: int) -> pd.Timestamp:
     thursdays = pd.date_range(november_first, periods=30, freq="D")
     thursdays = [d for d in thursdays if d.weekday() == 3]
     thanksgiving = thursdays[3]
+
     return thanksgiving + pd.Timedelta(days=1)
 
 
@@ -107,9 +151,15 @@ def _build_calendar_features(df: pd.DataFrame) -> pd.DataFrame:
     df["week_of_year"] = df["date"].dt.isocalendar().week.astype(int)
     df["day_of_week"] = df["date"].dt.dayofweek
 
-    df["days_until_black_friday"] = df["date"].apply(lambda d: _days_until_event(d, _get_black_friday))
-    df["days_until_cyber_monday"] = df["date"].apply(lambda d: _days_until_event(d, _get_cyber_monday))
-    df["days_until_christmas"] = df["date"].apply(lambda d: _days_until_event(d, _get_christmas))
+    df["days_until_black_friday"] = df["date"].apply(
+        lambda d: _days_until_event(d, _get_black_friday)
+    )
+    df["days_until_cyber_monday"] = df["date"].apply(
+        lambda d: _days_until_event(d, _get_cyber_monday)
+    )
+    df["days_until_christmas"] = df["date"].apply(
+        lambda d: _days_until_event(d, _get_christmas)
+    )
 
     df["is_black_friday_period"] = (df["days_until_black_friday"] <= 7).astype(int)
     df["is_cyber_monday_period"] = (df["days_until_cyber_monday"] <= 7).astype(int)
@@ -118,32 +168,34 @@ def _build_calendar_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _build_price_history_for_frontend(df: pd.DataFrame, days: int = 90) -> List[Dict[str, Any]]:
+def _build_price_history_for_frontend(
+    df: pd.DataFrame,
+    days: int = 90,
+) -> List[Dict[str, Any]]:
     recent = df.tail(days)[["date", "amazon_price"]].copy()
     recent = recent.dropna(subset=["amazon_price"])
 
     return [
         {
             "date": row["date"].strftime("%Y-%m-%d"),
-            "price": round(float(row["amazon_price"]), 2)
+            "price": round(float(row["amazon_price"]), 2),
         }
         for _, row in recent.iterrows()
     ]
 
 
-def build_live_features_from_keepa(product: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
+def build_live_features_from_keepa(
+    product: Dict[str, Any],
+) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
     """
     Build one model-ready feature dictionary from a live Keepa product response.
-
-    This reproduces the current V2 MVP feature logic.
-    It does not use Buy Box or offer-level features because the current model
-    was not trained on Buy Box or offers.
     """
 
     asin = product.get("asin")
     title = product.get("title", "")
     brand = product.get("brand", "")
     root_category = _get_root_category(product)
+    image_url = _get_product_image_url(product)
 
     data = product.get("data") or {}
 
@@ -190,20 +242,17 @@ def build_live_features_from_keepa(product: Dict[str, Any]) -> Tuple[Dict[str, A
     if "COUNT_NEW" not in daily.columns:
         daily["COUNT_NEW"] = np.nan
 
-    # Raw missingness before forward fill
     daily["amazon_price_raw_missing"] = daily["AMAZON"].isna().astype(int)
 
-    # Controlled forward fill, matching the V2 logic
     daily["amazon_price_raw_ffill"] = daily["AMAZON"].ffill(limit=14)
     daily["new_price_raw_ffill"] = daily["NEW"].ffill(limit=14)
     daily["sales_rank"] = daily["SALES"].ffill(limit=7)
     daily["offer_count"] = daily["COUNT_NEW"].ffill(limit=14)
 
-    # Selected modelling price: AMAZON if available, otherwise NEW
     daily["amazon_price"] = np.where(
         daily["amazon_price_raw_ffill"].notna(),
         daily["amazon_price_raw_ffill"],
-        daily["new_price_raw_ffill"]
+        daily["new_price_raw_ffill"],
     )
 
     daily["price_source"] = pd.Series(pd.NA, index=daily.index, dtype="object")
@@ -220,45 +269,47 @@ def build_live_features_from_keepa(product: Dict[str, Any]) -> Tuple[Dict[str, A
             f"Found {valid_price_days}, but at least {MIN_VALID_PRICE_DAYS} are required."
         )
 
-    # Price lags
     for lag in [1, 7, 14, 30]:
         daily[f"price_lag_{lag}"] = daily["amazon_price"].shift(lag)
 
-    # Price rolling features
     for window in [7, 14, 30]:
-        daily[f"price_rolling_mean_{window}"] = daily["amazon_price"].shift(1).rolling(window).mean()
-        daily[f"price_rolling_std_{window}"] = daily["amazon_price"].shift(1).rolling(window).std()
+        daily[f"price_rolling_mean_{window}"] = (
+            daily["amazon_price"].shift(1).rolling(window).mean()
+        )
+        daily[f"price_rolling_std_{window}"] = (
+            daily["amazon_price"].shift(1).rolling(window).std()
+        )
 
-    # Price percentage changes
     for lag in [7, 14, 30]:
         daily[f"price_pct_change_{lag}"] = (
-            (daily["amazon_price"] - daily[f"price_lag_{lag}"]) / daily[f"price_lag_{lag}"]
+            (daily["amazon_price"] - daily[f"price_lag_{lag}"])
+            / daily[f"price_lag_{lag}"]
         )
 
     daily["price_vs_rolling_mean_30"] = (
-        (daily["amazon_price"] - daily["price_rolling_mean_30"]) / daily["price_rolling_mean_30"]
+        (daily["amazon_price"] - daily["price_rolling_mean_30"])
+        / daily["price_rolling_mean_30"]
     )
 
-    # Sales-rank features
     daily["sales_rank_lag_7"] = daily["sales_rank"].shift(7)
     daily["sales_rank_rolling_mean_14"] = daily["sales_rank"].shift(1).rolling(14).mean()
     daily["sales_rank_velocity_14"] = (
-        (daily["sales_rank"] - daily["sales_rank"].shift(14)) / daily["sales_rank"].shift(14)
+        (daily["sales_rank"] - daily["sales_rank"].shift(14))
+        / daily["sales_rank"].shift(14)
     )
     daily["sales_rank_missing_flag"] = daily["sales_rank"].isna().astype(int)
 
-    # Offer-count features
     daily["offer_count_lag_7"] = daily["offer_count"].shift(7)
-    daily["offer_count_rolling_mean_14"] = daily["offer_count"].shift(1).rolling(14).mean()
+    daily["offer_count_rolling_mean_14"] = (
+        daily["offer_count"].shift(1).rolling(14).mean()
+    )
     daily["offer_count_trend_14"] = daily["offer_count"] - daily["offer_count"].shift(14)
     daily["offer_count_missing_flag"] = daily["offer_count"].isna().astype(int)
 
-    # Amazon missingness rolling feature
     daily["amazon_price_raw_missing_rolling_14"] = (
         daily["amazon_price_raw_missing"].shift(1).rolling(14).mean()
     )
 
-    # Source changed recently
     daily["price_source_changed"] = (
         daily["price_source"] != daily["price_source"].shift(1)
     ).astype(int)
@@ -267,16 +318,13 @@ def build_live_features_from_keepa(product: Dict[str, Any]) -> Tuple[Dict[str, A
         daily["price_source_changed"].shift(1).rolling(7).max()
     )
 
-    # NEW price shipping inclusion discontinuity feature
     daily["new_price_shipping_included"] = (
-        (daily["price_source"] == "NEW") &
-        (daily["date"] >= pd.Timestamp("2026-02-16"))
+        (daily["price_source"] == "NEW")
+        & (daily["date"] >= pd.Timestamp("2026-02-16"))
     ).astype(int)
 
-    # Calendar and events
     daily = _build_calendar_features(daily)
 
-    # Category one-hot columns used by the V2 model
     category_columns = [
         "root_category_Appliances",
         "root_category_Electronics",
@@ -290,7 +338,6 @@ def build_live_features_from_keepa(product: Dict[str, Any]) -> Tuple[Dict[str, A
         category_name = col.replace("root_category_", "")
         daily[col] = int(root_category == category_name)
 
-    # Use latest row with price
     usable = daily.dropna(subset=["amazon_price"]).copy()
 
     if usable.empty:
@@ -298,7 +345,6 @@ def build_live_features_from_keepa(product: Dict[str, Any]) -> Tuple[Dict[str, A
 
     latest_row = usable.iloc[-1].to_dict()
 
-    # Ensure all model features exist
     feature_dict = {}
 
     for col in FEATURE_COLUMNS:
@@ -306,18 +352,18 @@ def build_live_features_from_keepa(product: Dict[str, Any]) -> Tuple[Dict[str, A
 
         if pd.isna(value):
             feature_dict[col] = np.nan
-        elif isinstance(value, (np.integer,)):
+        elif isinstance(value, np.integer):
             feature_dict[col] = int(value)
-        elif isinstance(value, (np.floating,)):
+        elif isinstance(value, np.floating):
             feature_dict[col] = float(value)
         else:
             feature_dict[col] = value
 
-    # Add extra fields used by availability-risk explanation and API response
     feature_dict["asin"] = asin
     feature_dict["title"] = title
     feature_dict["brand"] = brand
     feature_dict["root_category"] = root_category
+    feature_dict["image_url"] = image_url
     feature_dict["latest_date"] = latest_row["date"].strftime("%Y-%m-%d")
 
     price_history = _build_price_history_for_frontend(usable, days=90)
@@ -327,6 +373,7 @@ def build_live_features_from_keepa(product: Dict[str, Any]) -> Tuple[Dict[str, A
         "title": title,
         "brand": brand,
         "root_category": root_category,
+        "image_url": image_url,
         "history_start": start_date.strftime("%Y-%m-%d"),
         "history_end": end_date.strftime("%Y-%m-%d"),
         "history_days": int(history_days),

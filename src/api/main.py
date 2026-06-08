@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,6 +62,7 @@ class PredictionResponse(BaseModel):
     title: Optional[str] = None
     brand: Optional[str] = None
     root_category: Optional[str] = None
+    image_url: Optional[str] = None
     latest_price: Optional[float] = None
     latest_date: Optional[str] = None
     history_days: Optional[int] = None
@@ -111,6 +112,7 @@ async def predict(request: PredictionRequest):
             "title": metadata.get("title"),
             "brand": metadata.get("brand"),
             "root_category": metadata.get("root_category"),
+            "image_url": metadata.get("image_url"),
             "latest_price": metadata.get("latest_price"),
             "latest_date": metadata.get("latest_date"),
             "history_days": metadata.get("history_days"),
