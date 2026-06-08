@@ -3,12 +3,17 @@ from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from src.services.asin_parser import extract_asin
 from src.services.keepa_client import fetch_keepa_product
 from src.features.live_feature_builder import build_live_features_from_keepa
 from src.models.predict_recommendation import predict_recommendation
+from src.services.tracking_store import (
+    save_tracking_request,
+    get_tracking_requests,
+    deactivate_tracking_request,
+)
 
 
 logging.basicConfig(level=logging.INFO)
@@ -82,6 +87,39 @@ class PredictionResponse(BaseModel):
     price_history: List[PriceHistoryPoint]
 
 
+class TrackingRequest(BaseModel):
+    asin: str = Field(..., description="Product ASIN to track.")
+    email: EmailStr = Field(..., description="Email address to notify.")
+    product_title: Optional[str] = None
+    image_url: Optional[str] = None
+    current_price: Optional[float] = None
+    target_price: Optional[float] = None
+    tracking_horizon: int = Field(
+        14,
+        ge=7,
+        le=30,
+        description="Tracking window in days. Use 7, 14, or 30.",
+    )
+    notify_on_meaningful_drop: bool = True
+
+
+class TrackingResponse(BaseModel):
+    id: str
+    asin: str
+    email: EmailStr
+    product_title: Optional[str] = None
+    image_url: Optional[str] = None
+    current_price: Optional[float] = None
+    target_price: Optional[float] = None
+    tracking_horizon: int
+    notify_on_meaningful_drop: bool
+    created_at: str
+    last_checked_at: Optional[str] = None
+    last_seen_price: Optional[float] = None
+    status: str
+    message: str
+
+
 @app.post("/predict", response_model=PredictionResponse)
 async def predict(request: PredictionRequest):
     """
@@ -135,6 +173,110 @@ async def predict(request: PredictionRequest):
     except Exception as e:
         logger.error(f"Prediction failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+
+
+@app.post("/track", response_model=TrackingResponse)
+async def track_product(request: TrackingRequest):
+    """
+    Saves a product tracking request.
+
+    Phase 1 stores the request locally.
+    Later this can be replaced with Supabase/Postgres storage.
+    """
+
+    try:
+        logger.info(
+            f"Received tracking request for ASIN {request.asin} "
+            f"and email {request.email}"
+        )
+
+        normalized_asin = extract_asin(request.asin)
+
+        if request.tracking_horizon not in [7, 14, 30]:
+            raise ValueError("Tracking horizon must be 7, 14, or 30 days.")
+
+        if request.target_price is not None and request.target_price <= 0:
+            raise ValueError("Target price must be greater than 0.")
+
+        saved_request = save_tracking_request(
+            asin=normalized_asin,
+            email=str(request.email),
+            product_title=request.product_title,
+            image_url=request.image_url,
+            current_price=request.current_price,
+            target_price=request.target_price,
+            tracking_horizon=request.tracking_horizon,
+            notify_on_meaningful_drop=request.notify_on_meaningful_drop,
+        )
+
+        return {
+            **saved_request,
+            "message": (
+                "Tracking request saved. You will be notified when the product "
+                "matches your tracking condition."
+            ),
+        }
+
+    except ValueError as e:
+        logger.warning(f"Invalid tracking request: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except Exception as e:
+        logger.error(f"Failed to save tracking request: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Tracking request could not be saved: {str(e)}",
+        )
+    
+
+@app.get("/tracking")
+async def list_tracking_requests():
+    """
+    Returns all tracking requests.
+
+    Phase 1 local version. Later this can query Supabase/Postgres.
+    """
+
+    try:
+        return {
+            "items": get_tracking_requests(),
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to list tracking requests: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Tracking requests could not be loaded: {str(e)}",
+        )
+
+
+@app.delete("/tracking/{tracking_id}")
+async def untrack_product(tracking_id: str):
+    """
+    Deactivates a tracking request.
+
+    This does not delete the record. It sets status to inactive so future
+    scheduled jobs can skip it and avoid wasting Keepa tokens.
+    """
+
+    try:
+        updated_request = deactivate_tracking_request(tracking_id)
+
+        return {
+            **updated_request,
+            "message": "Tracking has been stopped for this product.",
+        }
+
+    except ValueError as e:
+        logger.warning(f"Invalid untrack request: {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+
+    except Exception as e:
+        logger.error(f"Failed to stop tracking: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Tracking could not be stopped: {str(e)}",
+        )
 
 
 @app.get("/health")

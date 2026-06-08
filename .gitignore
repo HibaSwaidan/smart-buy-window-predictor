@@ -11,3 +11,4 @@ models/*.joblib
 models/**/*.joblib
 .DS_Store
 .ipynb_checkpoints
+data/tracking_requests.json
