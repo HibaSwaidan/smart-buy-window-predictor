@@ -1,10 +1,37 @@
-function Verdict({ recommendation, confidence, reason, recommended_window }) {
+function Verdict({
+  recommendation,
+  recommendationLabel,
+  confidence,
+  reason,
+  recommended_window,
+  bestHorizon,
+}) {
   const isBuy = recommendation === "buy"
   const isWait = recommendation === "wait"
+  const isWaitCaution = recommendation === "wait_caution"
+  const isWaitTrack = recommendation === "wait_track"
 
-  const confidencePercent = Math.round(confidence * 100)
+  const confidencePercent = Math.round((confidence || 0) * 100)
 
-  const label = isBuy ? "Buy Now" : isWait ? "Wait" : "Uncertain"
+  const label =
+    recommendationLabel ||
+    (isBuy
+      ? "Buy Now"
+      : isWait
+      ? "Wait"
+      : isWaitCaution
+      ? "Wait with Caution"
+      : isWaitTrack
+      ? "Wait and Track"
+      : "Uncertain")
+
+  const scopeLabel = isBuy
+    ? "Consistent buy-now signal across all windows"
+    : recommendation === "uncertain"
+    ? "No confident waiting window selected"
+    : bestHorizon
+    ? `Selected window: ${bestHorizon} days`
+    : "Selected window not available"
 
   const theme = isBuy
     ? {
@@ -14,13 +41,21 @@ function Verdict({ recommendation, confidence, reason, recommended_window }) {
         bar: "bg-green-600",
         glow: "shadow-green-100",
       }
-    : isWait
+    : isWait || isWaitTrack
     ? {
         card: "bg-blue-50 border-blue-100 shadow-blue-100",
         text: "text-blue-700",
         badge: "bg-blue-100 text-blue-700",
         bar: "bg-blue-600",
         glow: "shadow-blue-100",
+      }
+    : isWaitCaution
+    ? {
+        card: "bg-amber-50 border-amber-100 shadow-amber-100",
+        text: "text-amber-700",
+        badge: "bg-amber-100 text-amber-700",
+        bar: "bg-amber-500",
+        glow: "shadow-amber-100",
       }
     : {
         card: "bg-yellow-50 border-yellow-100 shadow-yellow-100",
@@ -32,10 +67,10 @@ function Verdict({ recommendation, confidence, reason, recommended_window }) {
 
   const confidenceLabel =
     confidencePercent >= 75
-      ? "High Confidence"
+      ? "High confidence"
       : confidencePercent >= 50
-      ? "Moderate Confidence"
-      : "Low Confidence"
+      ? "Moderate confidence"
+      : "Low confidence"
 
   return (
     <div
@@ -49,7 +84,7 @@ function Verdict({ recommendation, confidence, reason, recommended_window }) {
             {label.toUpperCase()}
           </span>
 
-          <h2 className={`text-5xl font-bold mt-5 ${theme.text}`}>
+          <h2 className={`text-4xl md:text-5xl font-bold mt-5 ${theme.text}`}>
             {label}
           </h2>
 
@@ -58,12 +93,12 @@ function Verdict({ recommendation, confidence, reason, recommended_window }) {
               {recommended_window}
             </p>
           )}
+
+          <p className="text-sm text-gray-600 mt-2">{scopeLabel}</p>
         </div>
 
         <div className="bg-white/80 rounded-2xl border border-white p-5 min-w-[220px]">
-          <p className="text-sm text-gray-500">
-            Model Confidence
-          </p>
+          <p className="text-sm text-gray-500">Selected model probability</p>
 
           <p className="text-3xl font-bold text-gray-900 mt-1">
             {confidencePercent}%
@@ -77,21 +112,19 @@ function Verdict({ recommendation, confidence, reason, recommended_window }) {
 
       <div className="mt-8">
         <div className="flex justify-between text-sm text-gray-500 mb-2">
-          <span>Confidence level</span>
+          <span>Price-drop probability</span>
           <span>{confidencePercent}%</span>
         </div>
 
         <div className="bg-white rounded-full h-3 overflow-hidden border border-gray-100">
           <div
             className={`h-full rounded-full ${theme.bar} transition-all duration-700 ease-out`}
-            style={{ width: `${confidencePercent}%` }}
+            style={{ width: `${Math.min(confidencePercent, 100)}%` }}
           />
         </div>
       </div>
 
-      <p className="text-gray-700 leading-relaxed mt-6">
-        {reason}
-      </p>
+      <p className="text-gray-700 leading-relaxed mt-6">{reason}</p>
     </div>
   )
 }
