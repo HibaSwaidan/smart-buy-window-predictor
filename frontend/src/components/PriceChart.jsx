@@ -5,17 +5,35 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  CartesianGrid
+  CartesianGrid,
 } from "recharts"
 
-function PriceChart({ data }) {
+function StatCard({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+      <p className="text-xs font-semibold text-gray-500">{label}</p>
+      <p className="text-lg font-extrabold text-gray-900 mt-1">{value}</p>
+    </div>
+  )
+}
+
+function PriceChart({ data = [] }) {
   const formattedData = data.map((item) => ({
     ...item,
     displayDate: new Date(item.date).toLocaleDateString("en-US", {
       month: "short",
-      year: "numeric"
-    })
+      year: "numeric",
+    }),
   }))
+
+  const prices = data
+    .map((item) => item.price)
+    .filter((price) => price !== null && price !== undefined)
+
+  const currentPrice = prices.length ? prices[prices.length - 1] : 0
+  const lowestPrice = prices.length ? Math.min(...prices) : 0
+  const highestPrice = prices.length ? Math.max(...prices) : 0
+  const priceRange = highestPrice - lowestPrice
 
   return (
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-200">
@@ -33,15 +51,19 @@ function PriceChart({ data }) {
         </p>
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <StatCard label="Current Price" value={`$${currentPrice.toFixed(2)}`} />
+        <StatCard label="Lowest Shown" value={`$${lowestPrice.toFixed(2)}`} />
+        <StatCard label="Highest Shown" value={`$${highestPrice.toFixed(2)}`} />
+        <StatCard label="Price Range" value={`$${priceRange.toFixed(2)}`} />
+      </div>
+
       <ResponsiveContainer width="100%" height={320}>
         <LineChart
           data={formattedData}
           margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
         >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="#eef2f7"
-          />
+          <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
 
           <XAxis
             dataKey="displayDate"
@@ -58,12 +80,12 @@ function PriceChart({ data }) {
           />
 
           <Tooltip
-            formatter={(v) => [`$${v}`, "Price"]}
+            formatter={(v) => [`$${Number(v).toFixed(2)}`, "Price"]}
             labelFormatter={(label) => `Date: ${label}`}
             contentStyle={{
               borderRadius: "12px",
               border: "1px solid #e5e7eb",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.08)"
+              boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
             }}
           />
 
