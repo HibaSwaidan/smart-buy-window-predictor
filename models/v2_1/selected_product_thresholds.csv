@@ -1,0 +1,4 @@
+horizon,buy_threshold,wait_threshold
+7,0.35,0.675
+14,0.35,0.575
+30,0.325,0.55

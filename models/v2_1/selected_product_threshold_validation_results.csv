@@ -1,0 +1,4 @@
+buy_threshold,wait_threshold,rows,buy_now_rows,uncertain_rows,wait_rows,buy_now_rate,uncertain_rate,wait_rate,decisive_rate,buy_now_actual_drop_rate,uncertain_actual_drop_rate,wait_actual_drop_rate,avg_conservative_saving_decisive_rows,avg_conservative_saving_all_rows,pct_pays_more_decisive_rows,pct_wait_pays_more_conservative,horizon
+0.35,0.675,255671,212917,37082,5672,0.8328,0.145,0.0222,0.855,0.1181,0.4754,0.7576,0.5329,0.4556,0.0034,0.1301,7
+0.35,0.575,255671,173753,44424,37494,0.6796,0.1738,0.1466,0.8262,0.1485,0.4792,0.7138,2.2895,1.8917,0.0302,0.1704,14
+0.325,0.55,255642,119187,55864,80591,0.4662,0.2185,0.3152,0.7815,0.1724,0.4454,0.763,2.9504,2.3057,0.0974,0.2415,30

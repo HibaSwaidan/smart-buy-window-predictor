@@ -1,6 +1,6 @@
 {
     "module_type": "rule_based_availability_risk",
-    "description": "Rule-based availability-risk module using historical/proxy marketplace signals.",
+    "description": "Horizon-agnostic rule-based availability-risk module using historical/proxy marketplace signals.",
     "risk_score_rules": {
         "risk_amazon_missing_recent": {
             "condition": "amazon_price_raw_missing_rolling_14 >= 0.85",
@@ -32,5 +32,5 @@
         "MEDIUM": "score 3 to 4",
         "HIGH": "score 5 to 8"
     },
-    "important_note": "This is an availability-risk proxy, not a supervised stock-out model. It is used because the current dataset does not contain reliable historical daily stock-out labels."
+    "important_note": "This is an availability-risk proxy, not a supervised stock-out model. It is used because the current dataset does not contain reliable historical daily stock-out labels. The same risk score can be combined with 7-day, 14-day, or 30-day price-drop predictions."
 }

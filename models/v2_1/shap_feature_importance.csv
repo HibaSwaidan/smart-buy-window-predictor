@@ -1,0 +1,136 @@
+horizon,feature,mean_abs_shap,rank
+7,price_vs_rolling_mean_30,0.5747129,1
+7,amazon_price,0.5170851,2
+7,price_rolling_std_30,0.2710138,3
+7,price_lag_1,0.19407807,4
+7,price_rolling_mean_7,0.18646635,5
+7,price_rolling_std_7,0.14371979,6
+7,price_lag_7,0.10410894,7
+7,offer_count,0.09986809,8
+7,price_pct_change_14,0.09895437,9
+7,price_pct_change_7,0.09585361,10
+7,price_pct_change_30,0.09074623,11
+7,amazon_price_raw_missing_rolling_14,0.07835907,12
+7,price_source_amazon,0.06584517,13
+7,price_rolling_std_14,0.059564147,14
+7,price_rolling_mean_30,0.055471424,15
+7,offer_count_rolling_mean_14,0.05243304,16
+7,offer_count_lag_7,0.044358827,17
+7,days_until_black_friday,0.04085898,18
+7,sales_rank,0.040705457,19
+7,price_lag_30,0.03926437,20
+7,price_lag_14,0.038705897,21
+7,sales_rank_lag_7,0.033119146,22
+7,amazon_price_raw_missing,0.032668907,23
+7,days_until_cyber_monday,0.03223995,24
+7,offer_count_trend_14,0.03127129,25
+7,root_category_Home & Kitchen,0.031133158,26
+7,sales_rank_rolling_mean_14,0.029829537,27
+7,price_rolling_mean_14,0.02693366,28
+7,price_source_changed_7d,0.026913133,29
+7,sales_rank_velocity_14,0.025835084,30
+7,days_until_christmas,0.021645095,31
+7,week_of_year,0.018000811,32
+7,root_category_Electronics,0.015117586,33
+7,month,0.011122203,34
+7,root_category_Tools & Home Improvement,0.010371577,35
+7,root_category_Sports & Outdoors,0.007902868,36
+7,offer_count_missing_flag,0.006045127,37
+7,root_category_Toys & Games,0.004580617,38
+7,day_of_week,0.0045076,39
+7,root_category_Appliances,0.0018658037,40
+7,is_black_friday_period,0.00022020676,41
+7,is_christmas_period,5.6934805e-05,42
+7,sales_rank_missing_flag,5.2265095e-05,43
+7,is_cyber_monday_period,1.968504e-05,44
+7,new_price_shipping_included,0.0,45
+14,price_vs_rolling_mean_30,0.5835118,1
+14,amazon_price,0.45682275,2
+14,price_rolling_std_30,0.24382056,3
+14,price_lag_1,0.12425819,4
+14,price_rolling_std_7,0.10366991,5
+14,price_pct_change_30,0.0996942,6
+14,price_rolling_mean_7,0.09152837,7
+14,price_pct_change_14,0.08943536,8
+14,price_pct_change_7,0.08610358,9
+14,price_rolling_std_14,0.07979909,10
+14,offer_count,0.07358267,11
+14,days_until_black_friday,0.05761037,12
+14,price_lag_7,0.049156584,13
+14,offer_count_rolling_mean_14,0.048463542,14
+14,price_source_amazon,0.047857404,15
+14,amazon_price_raw_missing_rolling_14,0.04778093,16
+14,price_lag_14,0.045629155,17
+14,price_lag_30,0.0456,18
+14,price_rolling_mean_30,0.04332982,19
+14,price_rolling_mean_14,0.039027337,20
+14,offer_count_lag_7,0.034997005,21
+14,root_category_Home & Kitchen,0.032390106,22
+14,amazon_price_raw_missing,0.031961802,23
+14,offer_count_trend_14,0.031295836,24
+14,sales_rank_rolling_mean_14,0.03006066,25
+14,days_until_cyber_monday,0.026675116,26
+14,sales_rank_velocity_14,0.024863906,27
+14,sales_rank,0.024241801,28
+14,days_until_christmas,0.018724034,29
+14,root_category_Electronics,0.017658938,30
+14,week_of_year,0.015051476,31
+14,sales_rank_lag_7,0.011037765,32
+14,root_category_Tools & Home Improvement,0.010060753,33
+14,price_source_changed_7d,0.009671584,34
+14,root_category_Sports & Outdoors,0.008014675,35
+14,month,0.0047651106,36
+14,root_category_Toys & Games,0.0032753071,37
+14,offer_count_missing_flag,0.0027091983,38
+14,root_category_Appliances,0.0023084588,39
+14,day_of_week,0.002119735,40
+14,is_black_friday_period,0.00060754607,41
+14,is_christmas_period,0.0003068344,42
+14,sales_rank_missing_flag,0.00019131755,43
+14,is_cyber_monday_period,0.00014633655,44
+14,new_price_shipping_included,0.0,45
+30,price_vs_rolling_mean_30,0.58485115,1
+30,amazon_price,0.5182199,2
+30,price_rolling_std_30,0.25240102,3
+30,price_lag_1,0.108168565,4
+30,price_rolling_mean_7,0.10055902,5
+30,price_pct_change_30,0.09963696,6
+30,price_pct_change_14,0.090165585,7
+30,price_pct_change_7,0.08828271,8
+30,days_until_black_friday,0.08125053,9
+30,offer_count,0.07691769,10
+30,price_rolling_std_14,0.07421148,11
+30,price_rolling_std_7,0.07339095,12
+30,price_lag_7,0.052144,13
+30,price_source_amazon,0.0497914,14
+30,price_rolling_mean_30,0.049653172,15
+30,price_lag_14,0.04662869,16
+30,offer_count_rolling_mean_14,0.04201174,17
+30,price_lag_30,0.0411083,18
+30,amazon_price_raw_missing_rolling_14,0.039287504,19
+30,price_rolling_mean_14,0.03557866,20
+30,offer_count_lag_7,0.03423227,21
+30,root_category_Home & Kitchen,0.034158226,22
+30,sales_rank_rolling_mean_14,0.033760637,23
+30,offer_count_trend_14,0.032262158,24
+30,sales_rank,0.030021051,25
+30,sales_rank_velocity_14,0.027104812,26
+30,days_until_cyber_monday,0.026455805,27
+30,week_of_year,0.02632593,28
+30,root_category_Electronics,0.023266228,29
+30,days_until_christmas,0.019864231,30
+30,root_category_Tools & Home Improvement,0.014639685,31
+30,sales_rank_lag_7,0.014534874,32
+30,amazon_price_raw_missing,0.011115655,33
+30,price_source_changed_7d,0.011035007,34
+30,root_category_Sports & Outdoors,0.009928182,35
+30,root_category_Toys & Games,0.0050544897,36
+30,month,0.0047441735,37
+30,root_category_Appliances,0.0036333003,38
+30,offer_count_missing_flag,0.0018547995,39
+30,day_of_week,0.0013828113,40
+30,is_black_friday_period,0.0012151455,41
+30,sales_rank_missing_flag,7.1237104e-05,42
+30,new_price_shipping_included,0.0,43
+30,is_cyber_monday_period,0.0,44
+30,is_christmas_period,0.0,45

@@ -21,9 +21,22 @@
   "threshold_selection": {
     "classification_threshold_method": "validation_f1_maximisation",
     "classification_threshold_grid": "0.05 to 0.95 in 0.01 increments",
-    "product_buy_now_threshold": 0.25,
-    "product_wait_threshold": 0.65,
-    "note": "F1-selected thresholds are used for binary model evaluation. The stricter product thresholds are used for user-facing BUY NOW, WAIT, and UNCERTAIN zones."
+    "product_threshold_method": "validation_optimised_recommendation_thresholds",
+    "selected_product_thresholds": {
+      "7": {
+        "buy_threshold": 0.35,
+        "wait_threshold": 0.675
+      },
+      "14": {
+        "buy_threshold": 0.35,
+        "wait_threshold": 0.575
+      },
+      "30": {
+        "buy_threshold": 0.325,
+        "wait_threshold": 0.55
+      }
+    },
+    "note": "F1-selected thresholds are used for binary model evaluation. Validation-optimised product thresholds are used for user-facing BUY NOW, WAIT, and UNCERTAIN zones."
   },
   "feature_columns": [
     "amazon_price",
