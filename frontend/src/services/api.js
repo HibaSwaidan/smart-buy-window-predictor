@@ -70,19 +70,37 @@ const normalizeHorizonPredictions = (horizonPredictions = {}) => {
 }
 
 export const analyzeProduct = async (urlOrAsin) => {
-  const response = await fetch(`${API_BASE_URL}/predict`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      url_or_asin: urlOrAsin,
-    }),
-  })
+  let response
+
+  try {
+    response = await fetch(`${API_BASE_URL}/predict`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url_or_asin: urlOrAsin,
+      }),
+    })
+  } catch {
+    const error = new Error(
+      "Unable to connect to the prediction service. Please check your connection or try again later."
+    )
+    error.status = 0
+    throw error
+  }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => null)
-    throw new Error(errorData?.detail || "Failed to analyze product")
+
+    const message =
+      errorData?.detail ||
+      errorData?.message ||
+      `Request failed with status ${response.status}`
+
+    const error = new Error(message)
+    error.status = response.status
+    throw error
   }
 
   const data = await response.json()

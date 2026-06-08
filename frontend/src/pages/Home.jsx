@@ -1,14 +1,11 @@
 import { useState } from "react"
 
-function Home({ onAnalyze }) {
+function Home({ onAnalyze, loading, error }) {
   const [input, setInput] = useState("")
-  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (value = input) => {
-    if (!value.trim()) return
-    setLoading(true)
+    if (!value.trim() || loading) return
     await onAnalyze(value.trim())
-    setLoading(false)
   }
 
   const handleDemoClick = () => {
@@ -75,30 +72,42 @@ function Home({ onAnalyze }) {
               </div>
             </div>
 
+            {error && (
+              <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-5 shadow-sm">
+                <p className="text-sm font-bold text-red-700">
+                  {error.title}
+                </p>
+
+                <p className="text-sm text-red-600 mt-2 leading-relaxed">
+                  {error.message}
+                </p>
+
+                <p className="text-xs text-red-500 mt-3">
+                  {error.suggestion}
+                </p>
+              </div>
+            )}
+
             {loading && (
-  <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-8 w-[350px]">
+                  <div className="flex justify-center mb-5">
+                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
 
-    <div className="bg-white rounded-3xl shadow-xl border border-gray-200 p-8 w-[350px]">
+                  <h3 className="text-lg font-bold text-center text-gray-900 mb-4">
+                    Analyzing Product
+                  </h3>
 
-      <div className="flex justify-center mb-5">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-
-      <h3 className="text-lg font-bold text-center text-gray-900 mb-4">
-        Analyzing Product
-      </h3>
-
-      <div className="space-y-2 text-sm text-gray-600">
-        <p>✓ Reading product identifier</p>
-        <p>✓ Analyzing price history</p>
-        <p>✓ Evaluating availability risk</p>
-        <p>✓ Generating recommendation</p>
-      </div>
-
-    </div>
-
-  </div>
-)}
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <p>✓ Reading product identifier</p>
+                    <p>✓ Analyzing price history</p>
+                    <p>✓ Evaluating availability risk</p>
+                    <p>✓ Generating recommendation</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="grid sm:grid-cols-3 gap-3 mt-6">
               <div className="bg-white/70 border border-blue-100 rounded-xl px-4 py-3 text-sm text-gray-700">
@@ -527,12 +536,13 @@ function Home({ onAnalyze }) {
             </p>
           </div>
         </footer>
+
         <button
-  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-  className="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:scale-105 transition-all duration-300"
->
-  ↑
-</button>
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:scale-105 transition-all duration-300"
+        >
+          ↑
+        </button>
       </div>
     </div>
   )

@@ -3,85 +3,137 @@ import PriceChart from "../components/PriceChart"
 
 function getRecommendationTheme(recommendation) {
   if (recommendation === "buy") {
-    return "bg-green-50 border-green-100 text-green-700"
+    return {
+      card: "border-green-200 bg-green-50",
+      badge: "bg-green-100 text-green-700",
+      bar: "bg-green-600",
+      text: "text-green-700",
+      label: "Low drop chance",
+    }
   }
 
   if (recommendation === "wait" || recommendation === "wait_track") {
-    return "bg-blue-50 border-blue-100 text-blue-700"
+    return {
+      card: "border-blue-200 bg-blue-50",
+      badge: "bg-blue-100 text-blue-700",
+      bar: "bg-blue-600",
+      text: "text-blue-700",
+      label: "Waiting opportunity",
+    }
   }
 
   if (recommendation === "wait_caution") {
-    return "bg-amber-50 border-amber-100 text-amber-700"
+    return {
+      card: "border-amber-200 bg-amber-50",
+      badge: "bg-amber-100 text-amber-700",
+      bar: "bg-amber-500",
+      text: "text-amber-700",
+      label: "Monitor closely",
+    }
   }
 
-  return "bg-yellow-50 border-yellow-100 text-yellow-700"
+  return {
+    card: "border-yellow-200 bg-yellow-50",
+    badge: "bg-yellow-100 text-yellow-700",
+    bar: "bg-yellow-500",
+    text: "text-yellow-700",
+    label: "Unclear signal",
+  }
 }
 
-function HorizonCard({ prediction }) {
+function formatRiskFlag(key) {
+  const labels = {
+    risk_amazon_missing_recent: "Recent Amazon price is missing",
+    risk_not_amazon_source: "Price source is not Amazon",
+    risk_price_source_changed: "Price source recently changed",
+    risk_offer_count_missing: "Offer count data is missing",
+    risk_low_offer_count: "Low number of active offers",
+    risk_offer_count_declining: "Offer count is declining",
+  }
+
+  return (
+    labels[key] ||
+    key.replace("risk_", "").replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())
+  )
+}
+
+function HorizonCard({ prediction, isSelected }) {
   const probabilityPercent = Math.round((prediction.probability || 0) * 100)
   const theme = getRecommendationTheme(prediction.recommendation)
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition">
+    <div
+      className={`rounded-2xl border p-5 shadow-sm transition hover:shadow-md ${
+        isSelected
+          ? `${theme.card} ring-2 ring-blue-200`
+          : "border-gray-200 bg-white"
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-gray-500">
-            {prediction.horizon}-day outlook
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-bold text-gray-900">
+              {prediction.horizon} Days
+            </p>
 
-          <p className="text-3xl font-bold text-gray-900 mt-2">
+            {isSelected && (
+              <span className="rounded-full bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white">
+                Best window
+              </span>
+            )}
+          </div>
+
+          <p className={`text-4xl font-extrabold mt-3 ${theme.text}`}>
             {probabilityPercent}%
           </p>
 
-          <p className="text-xs text-gray-500 mt-1">
-            probability of meaningful price drop
+          <p className="text-xs font-medium text-gray-500 mt-1">
+            chance of lower price
           </p>
         </div>
 
         <span
-          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${theme}`}
+          className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${theme.badge}`}
         >
           {prediction.recommendation_label}
         </span>
       </div>
 
       <div className="mt-5">
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-2.5 bg-white rounded-full overflow-hidden border border-gray-100">
           <div
-            className="h-full rounded-full bg-blue-600"
+            className={`h-full rounded-full ${theme.bar}`}
             style={{ width: `${Math.min(probabilityPercent, 100)}%` }}
           />
         </div>
 
-        <div className="flex justify-between text-xs text-gray-500 mt-2">
-          <span>Buy zone ≤ {Math.round(prediction.buy_threshold * 100)}%</span>
-          <span>Wait zone ≥ {Math.round(prediction.wait_threshold * 100)}%</span>
+        <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+          <div className="rounded-xl bg-white/80 border border-white p-2">
+            <p className="text-gray-500">Buy zone</p>
+            <p className="font-bold text-gray-900">
+              ≤ {Math.round(prediction.buy_threshold * 100)}%
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-white/80 border border-white p-2">
+            <p className="text-gray-500">Wait zone</p>
+            <p className="font-bold text-gray-900">
+              ≥ {Math.round(prediction.wait_threshold * 100)}%
+            </p>
+          </div>
         </div>
       </div>
 
-      <p className="text-sm text-gray-600 leading-relaxed mt-4">
-        {prediction.explanation?.[0] ||
-          "This horizon estimates the chance of a meaningful price drop within the selected window."}
-      </p>
-    </div>
-  )
-}
+      <div className="mt-4 rounded-xl bg-white/70 border border-white p-3">
+        <p className={`text-xs font-bold mb-1 ${theme.text}`}>
+          {theme.label}
+        </p>
 
-function ExplanationCard({ text, index }) {
-  const labels = [
-    "Price outlook",
-    "Availability signal",
-    "Combined recommendation",
-    "Suggested action",
-  ]
-
-  return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:bg-white hover:shadow-sm transition">
-      <span className="inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 mb-4">
-        {labels[index] || `Step ${index + 1}`}
-      </span>
-
-      <p className="text-sm text-gray-700 leading-relaxed">{text}</p>
+        <p className="text-sm text-gray-600 leading-relaxed">
+          {prediction.explanation?.[0] ||
+            "This window estimates the chance of a meaningful price drop."}
+        </p>
+      </div>
     </div>
   )
 }
@@ -89,6 +141,8 @@ function ExplanationCard({ text, index }) {
 function Results({ data, onReset }) {
   const riskScore = data.availability_risk?.score ?? 0
   const riskLevel = data.availability_risk?.level || "UNKNOWN"
+  const riskFlags = data.availability_risk?.flags || {}
+  const activeRiskFlags = Object.entries(riskFlags).filter(([, value]) => value === 1)
   const horizonPredictions = data.horizon_predictions || []
 
   const windowLabel =
@@ -103,63 +157,75 @@ function Results({ data, onReset }) {
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="max-w-5xl mx-auto space-y-6">
-        <div className="bg-white rounded-3xl border border-gray-200 shadow-md p-6">
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-            <div className="w-full md:w-44 h-56 md:h-44 bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border border-gray-100 shadow-sm">
+        <div className="bg-white rounded-3xl border border-gray-200 shadow-md p-5 md:p-6">
+          <div className="grid md:grid-cols-[180px_1fr] gap-6 items-start">
+            <div className="w-full h-56 md:h-48 bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border border-gray-100 shadow-sm">
               {data.image_url ? (
                 <img
                   src={data.image_url}
                   alt={data.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain p-3"
                 />
               ) : (
                 <span className="text-gray-400 text-sm">No image</span>
               )}
             </div>
 
-            <div className="flex-1 w-full">
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
                   {data.category}
                 </span>
 
-                <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                   Multi-Horizon Analysis
                 </span>
               </div>
 
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mt-4 leading-tight">
+              <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mt-4 leading-tight max-w-4xl">
                 {data.title}
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
                 <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4">
-                  <p className="text-xs font-medium text-blue-700">
+                  <p className="text-xs font-semibold text-blue-700">
                     Current Price
                   </p>
 
-                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                  <p className="text-2xl font-extrabold text-gray-900 mt-1">
                     ${data.current_price}
                   </p>
                 </div>
 
                 <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
-                  <p className="text-xs font-medium text-gray-500">
+                  <p className="text-xs font-semibold text-gray-500">
                     Product ASIN
                   </p>
 
-                  <p className="text-sm font-semibold text-gray-900 mt-2">
+                  <p className="text-sm font-bold text-gray-900 mt-2">
                     {data.asin}
                   </p>
                 </div>
 
                 <div className="rounded-2xl bg-green-50 border border-green-100 p-4">
-                  <p className="text-xs font-medium text-green-700">
+                  <p className="text-xs font-semibold text-green-700">
                     Recommendation Scope
                   </p>
 
-                  <p className="text-sm font-semibold text-gray-900 mt-2">
+                  <p className="text-sm font-bold text-gray-900 mt-2">
                     {windowLabel}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-4">
+                  <p className="text-xs font-semibold text-indigo-700">
+                    Best Horizon
+                  </p>
+
+                  <p className="text-sm font-bold text-gray-900 mt-2">
+                    {data.best_horizon
+                      ? `${data.best_horizon} Days`
+                      : "Not selected"}
                   </p>
                 </div>
               </div>
@@ -203,7 +269,11 @@ function Results({ data, onReset }) {
           {horizonPredictions.length > 0 ? (
             <div className="grid md:grid-cols-3 gap-4">
               {horizonPredictions.map((prediction) => (
-                <HorizonCard key={prediction.key} prediction={prediction} />
+                <HorizonCard
+                  key={prediction.key}
+                  prediction={prediction}
+                  isSelected={prediction.horizon === data.best_horizon}
+                />
               ))}
             </div>
           ) : (
@@ -215,24 +285,53 @@ function Results({ data, onReset }) {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
-            <div>
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div className="flex-1">
               <p className="text-sm font-semibold text-blue-600 mb-1">
                 Availability Risk
               </p>
 
               <h3 className="text-xl font-bold text-gray-900">
-                Marketplace waiting risk
+                Risk of waiting
               </h3>
 
               <p className="text-sm text-gray-500 mt-2 max-w-2xl">
-                This signal estimates whether waiting may be risky because of
-                Amazon price availability, offer-count behaviour, or recent
-                price-source changes.
+                This checks whether waiting could be risky because of weak
+                marketplace signals, missing Amazon pricing, or unstable offer
+                availability.
               </p>
+
+              <div className="mt-5 grid sm:grid-cols-2 gap-3">
+                {activeRiskFlags.length > 0 ? (
+                  activeRiskFlags.map(([key]) => (
+                    <div
+                      key={key}
+                      className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3"
+                    >
+                      <p className="text-xs font-semibold text-amber-700">
+                        Risk signal detected
+                      </p>
+
+                      <p className="text-sm font-medium text-gray-800 mt-1">
+                        {formatRiskFlag(key)}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3">
+                    <p className="text-xs font-semibold text-green-700">
+                      No major risk signals
+                    </p>
+
+                    <p className="text-sm font-medium text-gray-800 mt-1">
+                      Marketplace conditions look stable.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="rounded-2xl bg-blue-50 border border-blue-100 p-5 min-w-[220px]">
+            <div className="rounded-2xl bg-blue-50 border border-blue-100 p-5 w-full lg:w-64">
               <p className="text-sm text-blue-700 font-medium">
                 Current risk level
               </p>
@@ -257,29 +356,6 @@ function Results({ data, onReset }) {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-          <div className="mb-5">
-            <p className="text-sm font-semibold text-blue-600 mb-1">
-              Explainable Recommendation
-            </p>
-
-            <h3 className="text-xl font-bold text-gray-900">
-              Why this recommendation?
-            </h3>
-
-            <p className="text-sm text-gray-500 mt-2">
-              The final decision combines the selected price window with the
-              availability-risk signal.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            {(data.explanation || []).map((item, index) => (
-              <ExplanationCard key={index} text={item} index={index} />
-            ))}
-          </div>
-        </div>
-
         <PriceChart data={data.price_history} />
 
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl border border-blue-100 p-8 text-center shadow-sm">
@@ -299,6 +375,15 @@ function Results({ data, onReset }) {
             Analyze Another Product
           </button>
         </div>
+      <footer className="text-center text-xs text-gray-400 pb-4">
+  <p>
+    Smart Buy Window · Purchase Timing Intelligence
+  </p>
+  <p className="mt-1">
+    Powered by historical pricing signals, availability risk, and multi-horizon machine learning.
+  </p>
+</footer>
+
       </div>
     </div>
   )
