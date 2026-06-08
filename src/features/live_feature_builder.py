@@ -10,7 +10,14 @@ import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-FEATURE_COLUMNS_PATH = PROJECT_ROOT / "models" / "feature_columns.json"
+V2_FEATURE_COLUMNS_PATH = PROJECT_ROOT / "models" / "v2_1" / "feature_columns.json"
+MVP_FEATURE_COLUMNS_PATH = PROJECT_ROOT / "models" / "feature_columns.json"
+
+FEATURE_COLUMNS_PATH = (
+    V2_FEATURE_COLUMNS_PATH
+    if V2_FEATURE_COLUMNS_PATH.exists()
+    else MVP_FEATURE_COLUMNS_PATH
+)
 
 MIN_HISTORY_DAYS = 365
 MIN_VALID_PRICE_DAYS = 200

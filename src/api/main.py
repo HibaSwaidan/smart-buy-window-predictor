@@ -18,16 +18,16 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Smart Buy Window Predictor API",
     description=(
-        "Predicts whether to BUY NOW, WAIT, or be UNCERTAIN using live Keepa "
-        "history, a trained price-drop model, and an availability-risk module."
+        "Predicts 7-day, 14-day, and 30-day price-drop opportunities using live "
+        "Keepa history, multi-horizon XGBoost models, and an availability-risk layer."
     ),
-    version="1.0.0",
+    version="2.1.0",
 )
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Fine for MVP. Restrict this later in production.
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,6 +47,16 @@ class PriceHistoryPoint(BaseModel):
     price: float
 
 
+class HorizonPrediction(BaseModel):
+    horizon: int
+    price_drop_probability: float
+    price_zone: str
+    buy_threshold: float
+    wait_threshold: float
+    recommendation: str
+    explanation: List[str]
+
+
 class PredictionResponse(BaseModel):
     asin: str
     title: Optional[str] = None
@@ -58,11 +68,15 @@ class PredictionResponse(BaseModel):
     valid_price_days: Optional[int] = None
 
     recommendation: str
+    best_horizon: int
     price_drop_probability: float
     price_zone: str
+
     availability_risk_level: str
     availability_risk_score: int
     risk_flags: Dict[str, int]
+
+    horizon_predictions: Dict[str, HorizonPrediction]
     explanation: List[str]
     price_history: List[PriceHistoryPoint]
 
@@ -70,8 +84,8 @@ class PredictionResponse(BaseModel):
 @app.post("/predict", response_model=PredictionResponse)
 async def predict(request: PredictionRequest):
     """
-    Accepts an Amazon URL or ASIN, pulls live Keepa history, builds V2 model
-    features, and returns a BUY NOW / WAIT / UNCERTAIN recommendation.
+    Accepts an Amazon URL or ASIN, pulls live Keepa history, builds V2.1 features,
+    and returns multi-horizon BUY NOW / WAIT / WAIT AND TRACK / UNCERTAIN guidance.
     """
 
     try:
@@ -105,7 +119,10 @@ async def predict(request: PredictionRequest):
             "price_history": price_history,
         }
 
-        logger.info(f"Prediction successful for ASIN {asin}: {result['recommendation']}")
+        logger.info(
+            f"Prediction successful for ASIN {asin}: "
+            f"{result['recommendation']} over {result['best_horizon']} days"
+        )
 
         return response
 
