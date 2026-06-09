@@ -634,17 +634,4 @@ Planned extensions include:
 
 ---
 
-## Project Status
-
-Current status:
-
-* Multi-horizon prediction backend deployed
-* Frontend deployed
-* Dockerized backend working
-* Product image retrieval working
-* Availability-risk layer integrated
-* Tracking request system implemented
-* Supabase tracking storage integrated
-* Scheduled alerts not yet implemented
-
 This repository contains the full machine learning pipeline, deployed backend API, React frontend, model artifacts, and evaluation outputs for the Smart Buy Window Predictor.
