@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 
@@ -12,7 +12,7 @@ from src.models.predict_recommendation import predict_recommendation
 from src.services.tracking_store import (
     save_tracking_request,
     get_tracking_requests,
-    deactivate_tracking_request,
+    cancel_tracking_request,
 )
 
 
@@ -96,8 +96,6 @@ class TrackingRequest(BaseModel):
     target_price: Optional[float] = None
     tracking_horizon: int = Field(
         14,
-        ge=7,
-        le=30,
         description="Tracking window in days. Use 7, 14, or 30.",
     )
     notify_on_meaningful_drop: bool = True
@@ -118,6 +116,14 @@ class TrackingResponse(BaseModel):
     last_seen_price: Optional[float] = None
     status: str
     message: str
+
+
+def _default_meaningful_drop_target(current_price: Optional[float]) -> Optional[float]:
+    if current_price is None or current_price <= 0:
+        return None
+
+    drop_amount = max(current_price * 0.05, 5)
+    return round(current_price - drop_amount, 2)
 
 
 @app.post("/predict", response_model=PredictionResponse)
@@ -178,10 +184,7 @@ async def predict(request: PredictionRequest):
 @app.post("/track", response_model=TrackingResponse)
 async def track_product(request: TrackingRequest):
     """
-    Saves a product tracking request.
-
-    Phase 1 stores the request locally.
-    Later this can be replaced with Supabase/Postgres storage.
+    Saves a product tracking request into Supabase/Postgres.
     """
 
     try:
@@ -195,7 +198,15 @@ async def track_product(request: TrackingRequest):
         if request.tracking_horizon not in [7, 14, 30]:
             raise ValueError("Tracking horizon must be 7, 14, or 30 days.")
 
-        if request.target_price is not None and request.target_price <= 0:
+        if request.current_price is not None and request.current_price <= 0:
+            raise ValueError("Current price must be greater than 0.")
+
+        target_price = request.target_price
+
+        if target_price is None and request.notify_on_meaningful_drop:
+            target_price = _default_meaningful_drop_target(request.current_price)
+
+        if target_price is not None and target_price <= 0:
             raise ValueError("Target price must be greater than 0.")
 
         saved_request = save_tracking_request(
@@ -204,7 +215,7 @@ async def track_product(request: TrackingRequest):
             product_title=request.product_title,
             image_url=request.image_url,
             current_price=request.current_price,
-            target_price=request.target_price,
+            target_price=target_price,
             tracking_horizon=request.tracking_horizon,
             notify_on_meaningful_drop=request.notify_on_meaningful_drop,
         )
@@ -227,19 +238,19 @@ async def track_product(request: TrackingRequest):
             status_code=500,
             detail=f"Tracking request could not be saved: {str(e)}",
         )
-    
+
 
 @app.get("/tracking")
-async def list_tracking_requests():
+async def list_tracking_requests(
+    email: EmailStr = Query(..., description="Email address used for tracking.")
+):
     """
-    Returns all tracking requests.
-
-    Phase 1 local version. Later this can query Supabase/Postgres.
+    Returns tracking requests for one email only.
     """
 
     try:
         return {
-            "items": get_tracking_requests(),
+            "items": get_tracking_requests(str(email)),
         }
 
     except Exception as e:
@@ -251,20 +262,20 @@ async def list_tracking_requests():
 
 
 @app.delete("/tracking/{tracking_id}")
-async def untrack_product(tracking_id: str):
+async def untrack_product(
+    tracking_id: str,
+    email: EmailStr = Query(..., description="Email address used for tracking."),
+):
     """
-    Deactivates a tracking request.
-
-    This does not delete the record. It sets status to inactive so future
-    scheduled jobs can skip it and avoid wasting Keepa tokens.
+    Cancels a tracking request only if the tracking ID belongs to the given email.
     """
 
     try:
-        updated_request = deactivate_tracking_request(tracking_id)
+        updated_request = cancel_tracking_request(tracking_id, str(email))
 
         return {
             **updated_request,
-            "message": "Tracking has been stopped for this product.",
+            "message": "Tracking has been cancelled for this product.",
         }
 
     except ValueError as e:
@@ -272,10 +283,10 @@ async def untrack_product(tracking_id: str):
         raise HTTPException(status_code=404, detail=str(e))
 
     except Exception as e:
-        logger.error(f"Failed to stop tracking: {str(e)}")
+        logger.error(f"Failed to cancel tracking: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"Tracking could not be stopped: {str(e)}",
+            detail=f"Tracking could not be cancelled: {str(e)}",
         )
 
 

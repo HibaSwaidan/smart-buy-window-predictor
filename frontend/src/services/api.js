@@ -206,26 +206,34 @@ export const trackProduct = async (trackingData) => {
   return response.json()
 }
 
-export const getTrackedProducts = async () => {
-  const response = await fetch(`${API_BASE_URL}/tracking`)
+export const getTrackedProducts = async (email) => {
+  const encodedEmail = encodeURIComponent(email)
+
+  const response = await fetch(
+    `${API_BASE_URL}/tracking?email=${encodedEmail}`
+  )
 
   if (!response.ok) {
-    throw new Error("Failed to load tracked products")
+    const errorData = await response.json().catch(() => null)
+    throw new Error(errorData?.detail || "Failed to load tracked products")
   }
 
   return await response.json()
 }
 
-export const stopTracking = async (trackingId) => {
+export const stopTracking = async (trackingId, email) => {
+  const encodedEmail = encodeURIComponent(email)
+
   const response = await fetch(
-    `${API_BASE_URL}/tracking/${trackingId}`,
+    `${API_BASE_URL}/tracking/${trackingId}?email=${encodedEmail}`,
     {
       method: "DELETE",
     }
   )
 
   if (!response.ok) {
-    throw new Error("Failed to stop tracking")
+    const errorData = await response.json().catch(() => null)
+    throw new Error(errorData?.detail || "Failed to stop tracking")
   }
 
   return await response.json()
