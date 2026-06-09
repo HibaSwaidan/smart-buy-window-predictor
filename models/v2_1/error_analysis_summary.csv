@@ -1,0 +1,4 @@
+horizon,test_rows,decisive_rows,false_wait_rows,missed_drop_rows,false_wait_rate_among_wait,missed_drop_rate_among_buy_now,avg_false_wait_probability,avg_missed_drop_probability,avg_false_wait_price,avg_missed_drop_price
+7,105428,89460,661,10382,0.2432,0.1197,0.761,0.1868,147.93,96.26
+14,98974,81855,4260,9871,0.2735,0.1489,0.6857,0.1995,136.31,85.47
+30,84246,66775,6212,7018,0.2312,0.1758,0.697,0.2122,117.16,65.55
