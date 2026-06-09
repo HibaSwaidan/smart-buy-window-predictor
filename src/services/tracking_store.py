@@ -1,38 +1,38 @@
-import json
-from pathlib import Path
+import os
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from uuid import uuid4
 
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
 
-TRACKING_FILE = Path("data/tracking_requests.json")
+
+load_dotenv()
+
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _ensure_file_exists() -> None:
-    TRACKING_FILE.parent.mkdir(parents=True, exist_ok=True)
+def _serialize_record(record: Dict[str, Any]) -> Dict[str, Any]:
+    serialized = dict(record)
 
-    if not TRACKING_FILE.exists():
-        TRACKING_FILE.write_text("[]", encoding="utf-8")
+    for key, value in serialized.items():
+        if isinstance(value, datetime):
+            serialized[key] = value.isoformat()
 
-
-def _load_requests() -> list[Dict[str, Any]]:
-    _ensure_file_exists()
-
-    try:
-        return json.loads(TRACKING_FILE.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return []
+    return serialized
 
 
-def _save_requests(requests: list[Dict[str, Any]]) -> None:
-    TRACKING_FILE.write_text(
-        json.dumps(requests, indent=2),
-        encoding="utf-8",
-    )
+def _get_connection():
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is not set.")
+
+    return psycopg2.connect(DATABASE_URL)
 
 
 def save_tracking_request(
@@ -46,10 +46,44 @@ def save_tracking_request(
     tracking_horizon: int,
     notify_on_meaningful_drop: bool,
 ) -> Dict[str, Any]:
-    requests = _load_requests()
+    tracking_id = str(uuid4())
 
-    tracking_request = {
-        "id": str(uuid4()),
+    query = """
+        INSERT INTO tracking_requests (
+            id,
+            asin,
+            email,
+            product_title,
+            image_url,
+            current_price,
+            target_price,
+            tracking_horizon,
+            notify_on_meaningful_drop,
+            created_at,
+            last_checked_at,
+            last_seen_price,
+            status
+        )
+        VALUES (
+            %(id)s,
+            %(asin)s,
+            %(email)s,
+            %(product_title)s,
+            %(image_url)s,
+            %(current_price)s,
+            %(target_price)s,
+            %(tracking_horizon)s,
+            %(notify_on_meaningful_drop)s,
+            %(created_at)s,
+            NULL,
+            %(last_seen_price)s,
+            'active'
+        )
+        RETURNING *;
+    """
+
+    values = {
+        "id": tracking_id,
         "asin": asin,
         "email": email,
         "product_title": product_title,
@@ -59,29 +93,60 @@ def save_tracking_request(
         "tracking_horizon": tracking_horizon,
         "notify_on_meaningful_drop": notify_on_meaningful_drop,
         "created_at": _now_iso(),
-        "last_checked_at": None,
         "last_seen_price": current_price,
-        "status": "active",
     }
 
-    requests.append(tracking_request)
-    _save_requests(requests)
+    with _get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, values)
+            saved = cur.fetchone()
+            conn.commit()
 
-    return tracking_request
+    return _serialize_record(saved)
 
 
-def get_tracking_requests() -> list[Dict[str, Any]]:
-    return _load_requests()
+def get_tracking_requests(email: str) -> list[Dict[str, Any]]:
+    query = """
+        SELECT *
+        FROM tracking_requests
+        WHERE email = %(email)s
+        ORDER BY created_at DESC;
+    """
+
+    with _get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, {"email": email})
+            rows = cur.fetchall()
+
+    return [_serialize_record(row) for row in rows]
 
 
-def deactivate_tracking_request(tracking_id: str) -> Dict[str, Any]:
-    requests = _load_requests()
+def cancel_tracking_request(tracking_id: str, email: str) -> Dict[str, Any]:
+    query = """
+        UPDATE tracking_requests
+        SET
+            status = 'cancelled',
+            deactivated_at = %(deactivated_at)s
+        WHERE id = %(tracking_id)s
+          AND email = %(email)s
+          AND status = 'active'
+        RETURNING *;
+    """
 
-    for request in requests:
-        if request.get("id") == tracking_id:
-            request["status"] = "inactive"
-            request["deactivated_at"] = _now_iso()
-            _save_requests(requests)
-            return request
+    with _get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                query,
+                {
+                    "tracking_id": tracking_id,
+                    "email": email,
+                    "deactivated_at": _now_iso(),
+                },
+            )
+            updated = cur.fetchone()
+            conn.commit()
 
-    raise ValueError("Tracking request not found.")
+    if not updated:
+        raise ValueError("Active tracking request not found for this email.")
+
+    return _serialize_record(updated)

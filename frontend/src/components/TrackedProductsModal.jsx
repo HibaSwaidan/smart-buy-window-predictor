@@ -1,7 +1,7 @@
 function TrackedProductsModal({ items, loading, error, onClose, onStopTracking }) {
   const activeItems = items.filter((item) => item.status === "active")
-  const inactiveItems = items.filter((item) => item.status !== "active")
-  const sortedItems = [...activeItems, ...inactiveItems]
+  const cancelledItems = items.filter((item) => item.status !== "active")
+  const sortedItems = [...activeItems, ...cancelledItems]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4">
@@ -17,7 +17,8 @@ function TrackedProductsModal({ items, loading, error, onClose, onStopTracking }
             </h2>
 
             <p className="text-sm text-gray-500 mt-2">
-              View products saved for price monitoring and stop tracking items you no longer need.
+              View products saved for price monitoring and cancel tracking items
+              you no longer need.
             </p>
           </div>
 
@@ -49,7 +50,8 @@ function TrackedProductsModal({ items, loading, error, onClose, onStopTracking }
               </p>
 
               <p className="text-sm text-gray-500 mt-2">
-                Analyze a product and click Track This Product to start monitoring it.
+                Analyze a product and click Track This Product to start
+                monitoring it.
               </p>
             </div>
           )}
@@ -58,6 +60,7 @@ function TrackedProductsModal({ items, loading, error, onClose, onStopTracking }
             <div className="space-y-4">
               {sortedItems.map((item) => {
                 const isActive = item.status === "active"
+                const statusLabel = isActive ? "Active" : "Cancelled"
 
                 return (
                   <div
@@ -88,7 +91,7 @@ function TrackedProductsModal({ items, loading, error, onClose, onStopTracking }
                                 : "bg-gray-200 text-gray-600"
                             }`}
                           >
-                            {isActive ? "Active" : "Inactive"}
+                            {statusLabel}
                           </span>
 
                           <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
@@ -110,7 +113,9 @@ function TrackedProductsModal({ items, loading, error, onClose, onStopTracking }
                               Current price
                             </p>
                             <p className="text-sm font-bold text-gray-900">
-                              ${item.current_price ?? "N/A"}
+                              {item.current_price
+                                ? `$${item.current_price}`
+                                : "N/A"}
                             </p>
                           </div>
 
@@ -119,7 +124,9 @@ function TrackedProductsModal({ items, loading, error, onClose, onStopTracking }
                               Target price
                             </p>
                             <p className="text-sm font-bold text-gray-900">
-                              {item.target_price ? `$${item.target_price}` : "Meaningful drop"}
+                              {item.target_price
+                                ? `$${item.target_price}`
+                                : "Meaningful drop"}
                             </p>
                           </div>
 
@@ -128,7 +135,9 @@ function TrackedProductsModal({ items, loading, error, onClose, onStopTracking }
                               Last seen price
                             </p>
                             <p className="text-sm font-bold text-gray-900">
-                              ${item.last_seen_price ?? "N/A"}
+                              {item.last_seen_price
+                                ? `$${item.last_seen_price}`
+                                : "N/A"}
                             </p>
                           </div>
                         </div>
@@ -140,7 +149,7 @@ function TrackedProductsModal({ items, loading, error, onClose, onStopTracking }
                           disabled={!isActive}
                           className="w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:bg-gray-300 disabled:text-gray-500"
                         >
-                          {isActive ? "Stop Tracking" : "Stopped"}
+                          {isActive ? "Stop Tracking" : "Cancelled"}
                         </button>
                       </div>
                     </div>

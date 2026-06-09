@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import Verdict from "../components/Verdict"
 import PriceChart from "../components/PriceChart"
 import TrackProductModal from "../components/TrackProductModal"
@@ -147,6 +147,7 @@ function HorizonCard({ prediction, isSelected }) {
 
 function Results({ data, onReset }) {
   const [showTrackModal, setShowTrackModal] = useState(false)
+  const trackingEmailRef = useRef("")
   const [showTrackedProductsModal, setShowTrackedProductsModal] = useState(false)
   const [trackedProducts, setTrackedProducts] = useState([])
   const [trackedProductsLoading, setTrackedProductsLoading] = useState(false)
@@ -162,12 +163,17 @@ function Results({ data, onReset }) {
   }
 
   const handleOpenTrackedProducts = async () => {
+  const email = window.prompt("Enter the email you used for tracking:")
+
+  if (!email) return
+
+  trackingEmailRef.current = email
   setShowTrackedProductsModal(true)
   setTrackedProductsLoading(true)
   setTrackedProductsError("")
 
   try {
-    const response = await getTrackedProducts()
+    const response = await getTrackedProducts(email)
     setTrackedProducts(response.items || [])
   } catch (err) {
     setTrackedProductsError(
@@ -180,7 +186,7 @@ function Results({ data, onReset }) {
 
 const handleStopTracking = async (trackingId) => {
   try {
-    const updated = await stopTracking(trackingId)
+    const updated = await stopTracking(trackingId, trackingEmailRef.current)
 
     setTrackedProducts((currentItems) =>
       currentItems.map((item) =>
