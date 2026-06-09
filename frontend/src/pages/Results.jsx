@@ -8,36 +8,35 @@ import { trackProduct, getTrackedProducts, stopTracking } from "../services/api"
 function getRecommendationTheme(recommendation) {
   if (recommendation === "buy") {
     return {
-      card: "border-green-200 bg-green-50",
+      selectedCard: "border-green-200 bg-green-50 ring-2 ring-green-100",
       badge: "bg-green-100 text-green-700",
       bar: "bg-green-600",
       text: "text-green-700",
-      label: "Low drop chance",
+      label: "Low chance",
     }
   }
 
-  if (recommendation === "wait" || recommendation === "wait_track") {
+  if (
+    recommendation === "wait" ||
+    recommendation === "wait_track" ||
+    recommendation === "wait_caution"
+  ) {
     return {
-      card: "border-blue-200 bg-blue-50",
+      selectedCard: "border-blue-200 bg-blue-50 ring-2 ring-blue-100",
       badge: "bg-blue-100 text-blue-700",
       bar: "bg-blue-600",
       text: "text-blue-700",
-      label: "Waiting opportunity",
-    }
-  }
-
-  if (recommendation === "wait_caution") {
-    return {
-      card: "border-amber-200 bg-amber-50",
-      badge: "bg-amber-100 text-amber-700",
-      bar: "bg-amber-500",
-      text: "text-amber-700",
-      label: "Monitor closely",
+      label:
+        recommendation === "wait_caution"
+          ? "Monitor availability"
+          : recommendation === "wait_track"
+          ? "Track actively"
+          : "Good opportunity",
     }
   }
 
   return {
-    card: "border-yellow-200 bg-yellow-50",
+    selectedCard: "border-yellow-200 bg-yellow-50 ring-2 ring-yellow-100",
     badge: "bg-yellow-100 text-yellow-700",
     bar: "bg-yellow-500",
     text: "text-yellow-700",
@@ -48,7 +47,7 @@ function getRecommendationTheme(recommendation) {
 function formatRiskFlag(key) {
   const labels = {
     risk_amazon_missing_recent: "Recent Amazon price is missing",
-    risk_not_amazon_source: "Price source is not Amazon",
+    risk_not_amazon_source: "Current price is not from Amazon",
     risk_price_source_changed: "Price source recently changed",
     risk_offer_count_missing: "Offer count data is missing",
     risk_low_offer_count: "Low number of active offers",
@@ -70,75 +69,68 @@ function HorizonCard({ prediction, isSelected }) {
 
   return (
     <div
-      className={`rounded-2xl border p-5 shadow-sm transition hover:shadow-md ${
-        isSelected
-          ? `${theme.card} ring-2 ring-blue-200`
-          : "border-gray-200 bg-white"
+      className={`rounded-2xl border p-5 shadow-sm transition min-h-[270px] flex flex-col justify-between ${
+        isSelected ? theme.selectedCard : "border-gray-200 bg-white"
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-gray-900">
-              {prediction.horizon} Days
-            </p>
+      <div>
+        <div className="flex items-start justify-between gap-3 min-h-[42px]">
+          <p className="text-base font-extrabold text-gray-900">
+            {prediction.horizon} days
+          </p>
 
+          <div className="flex flex-col items-end gap-2">
             {isSelected && (
-              <span className="rounded-full bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white">
-                Best window
+              <span className="rounded-full bg-blue-600 px-3 py-1 text-[11px] font-bold text-white">
+                Selected
               </span>
             )}
+
+            <span
+              className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${theme.badge}`}
+            >
+              {prediction.recommendation_label}
+            </span>
           </div>
-
-          <p className={`text-4xl font-extrabold mt-3 ${theme.text}`}>
-            {probabilityPercent}%
-          </p>
-
-          <p className="text-xs font-medium text-gray-500 mt-1">
-            chance of lower price
-          </p>
         </div>
 
-        <span
-          className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${theme.badge}`}
-        >
-          {prediction.recommendation_label}
-        </span>
+        <p className={`text-4xl font-extrabold mt-4 ${theme.text}`}>
+          {probabilityPercent}%
+        </p>
+
+        <p className="text-sm font-medium text-gray-500 mt-1">
+          chance of a lower price
+        </p>
       </div>
 
       <div className="mt-5">
-        <div className="h-2.5 bg-white rounded-full overflow-hidden border border-gray-100">
+        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full ${theme.bar}`}
             style={{ width: `${Math.min(probabilityPercent, 100)}%` }}
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-          <div className="rounded-xl bg-white/80 border border-white p-2">
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <div className="rounded-xl bg-white/80 border border-gray-100 px-3 py-2">
             <p className="text-gray-500">Buy zone</p>
+
             <p className="font-bold text-gray-900">
               ≤ {Math.round(prediction.buy_threshold * 100)}%
             </p>
           </div>
 
-          <div className="rounded-xl bg-white/80 border border-white p-2">
+          <div className="rounded-xl bg-white/80 border border-gray-100 px-3 py-2">
             <p className="text-gray-500">Wait zone</p>
+
             <p className="font-bold text-gray-900">
               ≥ {Math.round(prediction.wait_threshold * 100)}%
             </p>
           </div>
         </div>
-      </div>
 
-      <div className="mt-4 rounded-xl bg-white/70 border border-white p-3">
-        <p className={`text-xs font-bold mb-1 ${theme.text}`}>
+        <p className={`text-sm font-bold mt-4 ${theme.text}`}>
           {theme.label}
-        </p>
-
-        <p className="text-sm text-gray-600 leading-relaxed">
-          {prediction.explanation?.[0] ||
-            "This window estimates the chance of a meaningful price drop."}
         </p>
       </div>
     </div>
@@ -152,69 +144,68 @@ function Results({ data, onReset }) {
   const [trackedProducts, setTrackedProducts] = useState([])
   const [trackedProductsLoading, setTrackedProductsLoading] = useState(false)
   const [trackedProductsError, setTrackedProductsError] = useState("")
+
   const riskScore = data.availability_risk?.score ?? 0
   const riskLevel = data.availability_risk?.level || "UNKNOWN"
   const riskFlags = data.availability_risk?.flags || {}
-  const activeRiskFlags = Object.entries(riskFlags).filter(([, value]) => value === 1)
+  const activeRiskFlags = Object.entries(riskFlags).filter(
+    ([, value]) => value === 1
+  )
+  const warningCount = activeRiskFlags.length
   const horizonPredictions = data.horizon_predictions || []
+
+  const selectedWindow =
+    data.best_horizon &&
+    data.recommendation !== "buy" &&
+    data.recommendation !== "uncertain"
+      ? `${data.best_horizon} days`
+      : data.recommendation === "buy"
+      ? "Buy now"
+      : "Not selected"
 
   const handleTrackSubmit = async (payload) => {
     return await trackProduct(payload)
   }
 
   const handleOpenTrackedProducts = async () => {
-  const email = window.prompt("Enter the email you used for tracking:")
+    const email = window.prompt("Enter the email you used for tracking:")
+    if (!email) return
 
-  if (!email) return
+    trackingEmailRef.current = email
+    setShowTrackedProductsModal(true)
+    setTrackedProductsLoading(true)
+    setTrackedProductsError("")
 
-  trackingEmailRef.current = email
-  setShowTrackedProductsModal(true)
-  setTrackedProductsLoading(true)
-  setTrackedProductsError("")
-
-  try {
-    const response = await getTrackedProducts(email)
-    setTrackedProducts(response.items || [])
-  } catch (err) {
-    setTrackedProductsError(
-      err.message || "Could not load tracked products."
-    )
-  } finally {
-    setTrackedProductsLoading(false)
+    try {
+      const response = await getTrackedProducts(email)
+      setTrackedProducts(response.items || [])
+    } catch (err) {
+      setTrackedProductsError(err.message || "Could not load tracked products.")
+    } finally {
+      setTrackedProductsLoading(false)
+    }
   }
-}
 
-const handleStopTracking = async (trackingId) => {
-  try {
-    const updated = await stopTracking(trackingId, trackingEmailRef.current)
+  const handleStopTracking = async (trackingId) => {
+    try {
+      const updated = await stopTracking(trackingId, trackingEmailRef.current)
 
-    setTrackedProducts((currentItems) =>
-      currentItems.map((item) =>
-        item.id === trackingId ? updated : item
+      setTrackedProducts((currentItems) =>
+        currentItems.map((item) => (item.id === trackingId ? updated : item))
       )
-    )
-  } catch (err) {
-    setTrackedProductsError(
-      err.message || "Could not stop tracking this product."
-    )
+    } catch (err) {
+      setTrackedProductsError(
+        err.message || "Could not stop tracking this product."
+      )
+    }
   }
-}
-
-  const windowLabel =
-    data.recommendation === "buy"
-      ? "All windows support buying now"
-      : data.recommendation === "uncertain"
-      ? "No confident window selected"
-      : data.best_horizon
-      ? `${data.best_horizon} days`
-      : "Not selected"
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="max-w-5xl mx-auto space-y-6">
-        <div className="bg-white rounded-3xl border border-gray-200 shadow-md p-5 md:p-6">
+        <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-5 md:p-6">
           <div className="grid md:grid-cols-[180px_1fr] gap-6 items-start">
-            <div className="w-full h-56 md:h-48 bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border border-gray-100 shadow-sm">
+            <div className="w-full h-56 md:h-48 bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border border-gray-100">
               {data.image_url ? (
                 <img
                   src={data.image_url}
@@ -233,7 +224,7 @@ const handleStopTracking = async (trackingId) => {
                 </span>
 
                 <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                  Multi-Horizon Analysis
+                  Smart price check
                 </span>
               </div>
 
@@ -241,7 +232,7 @@ const handleStopTracking = async (trackingId) => {
                 {data.title}
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
                 <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4">
                   <p className="text-xs font-semibold text-blue-700">
                     Current Price
@@ -262,34 +253,22 @@ const handleStopTracking = async (trackingId) => {
                   </p>
                 </div>
 
-                <div className="rounded-2xl bg-green-50 border border-green-100 p-4">
-                  <p className="text-xs font-semibold text-green-700">
-                    Recommendation Scope
-                  </p>
-
-                  <p className="text-sm font-bold text-gray-900 mt-2">
-                    {windowLabel}
-                  </p>
-                </div>
-
                 <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-4">
                   <p className="text-xs font-semibold text-indigo-700">
-                    Best Horizon
+                    Recommended Window
                   </p>
 
                   <p className="text-sm font-bold text-gray-900 mt-2">
-                    {data.best_horizon
-                      ? `${data.best_horizon} Days`
-                      : "Not selected"}
+                    {selectedWindow}
                   </p>
                 </div>
               </div>
 
               <div className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  This result combines three price-drop models with an
-                  availability-risk layer to support a practical buy-now versus
-                  wait decision.
+                  We compare the product’s price history with current marketplace
+                  signals to suggest whether buying now or waiting looks more
+                  reasonable.
                 </p>
               </div>
             </div>
@@ -298,53 +277,54 @@ const handleStopTracking = async (trackingId) => {
 
         <Verdict
           recommendation={data.recommendation}
-          recommendationLabel={data.recommendation_label}
           confidence={data.confidence}
           reason={data.reason}
           recommended_window={data.recommended_window}
-          bestHorizon={data.best_horizon}
         />
 
-        <div className="bg-white rounded-3xl border border-gray-200 p-6 text-center shadow-sm">
-  <h3 className="text-lg font-bold text-gray-900">
-    Want to monitor this product?
-  </h3>
+        <div className="bg-white rounded-3xl border border-gray-200 p-5 md:p-6 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">
+                Track this product
+              </h3>
 
-  <p className="text-sm text-gray-500 mt-2">
-    Track this item and get notified later when it reaches your target price
-    or shows a meaningful drop.
-  </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Save the product and monitor it for your target price or a
+                meaningful drop.
+              </p>
+            </div>
 
-  <div className="mt-5 flex flex-col sm:flex-row justify-center gap-3">
-    <button
-      onClick={() => setShowTrackModal(true)}
-      className="bg-green-600 text-white px-8 py-3 rounded-xl text-sm font-semibold hover:bg-green-700 hover:-translate-y-0.5 transition-all duration-300 shadow-sm"
-    >
-      Track This Product
-    </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setShowTrackModal(true)}
+                className="bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:bg-blue-700 transition"
+              >
+                Start Tracking
+              </button>
 
-    <button
-      onClick={handleOpenTrackedProducts}
-      className="bg-white text-blue-700 border border-blue-100 px-8 py-3 rounded-xl text-sm font-semibold hover:bg-blue-50 hover:-translate-y-0.5 transition-all duration-300 shadow-sm"
-    >
-      View Tracked Products
-    </button>
-  </div>
-</div>
+              <button
+                onClick={handleOpenTrackedProducts}
+                className="bg-white text-blue-700 border border-blue-100 px-6 py-3 rounded-xl text-sm font-semibold hover:bg-blue-50 transition"
+              >
+                View Tracked
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
           <div className="mb-5">
             <p className="text-sm font-semibold text-blue-600 mb-1">
-              Multi-Horizon Price Outlook
+              Price Outlook
             </p>
 
             <h3 className="text-xl font-bold text-gray-900">
-              Price-drop probability by waiting window
+              Chance of a better price
             </h3>
 
             <p className="text-sm text-gray-500 mt-2">
-              Each window uses its own trained model and recommendation
-              thresholds.
+              We compare short, medium, and longer waiting windows.
             </p>
           </div>
 
@@ -360,8 +340,7 @@ const handleStopTracking = async (trackingId) => {
             </div>
           ) : (
             <div className="rounded-2xl border border-yellow-100 bg-yellow-50 p-5 text-sm text-yellow-800">
-              Multi-horizon predictions were not returned by the API. Check that
-              the frontend is connected to the V2.1 backend.
+              Price outlook details are unavailable for this product.
             </div>
           )}
         </div>
@@ -370,17 +349,16 @@ const handleStopTracking = async (trackingId) => {
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
             <div className="flex-1">
               <p className="text-sm font-semibold text-blue-600 mb-1">
-                Availability Risk
+                Availability Check
               </p>
 
               <h3 className="text-xl font-bold text-gray-900">
-                Risk of waiting
+                Is it safe to wait?
               </h3>
 
               <p className="text-sm text-gray-500 mt-2 max-w-2xl">
-                This checks whether waiting could be risky because of weak
-                marketplace signals, missing Amazon pricing, or unstable offer
-                availability.
+                We check whether waiting may be risky because of missing Amazon
+                pricing, non-Amazon pricing, or weaker offer availability.
               </p>
 
               <div className="mt-5 grid sm:grid-cols-2 gap-3">
@@ -388,10 +366,10 @@ const handleStopTracking = async (trackingId) => {
                   activeRiskFlags.map(([key]) => (
                     <div
                       key={key}
-                      className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3"
+                      className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3"
                     >
-                      <p className="text-xs font-semibold text-amber-700">
-                        Risk signal detected
+                      <p className="text-xs font-semibold text-blue-700">
+                        Warning signal
                       </p>
 
                       <p className="text-sm font-medium text-gray-800 mt-1">
@@ -402,11 +380,11 @@ const handleStopTracking = async (trackingId) => {
                 ) : (
                   <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3">
                     <p className="text-xs font-semibold text-green-700">
-                      No major risk signals
+                      Looks stable
                     </p>
 
                     <p className="text-sm font-medium text-gray-800 mt-1">
-                      Marketplace conditions look stable.
+                      No major availability warning signals were found.
                     </p>
                   </div>
                 )}
@@ -415,7 +393,7 @@ const handleStopTracking = async (trackingId) => {
 
             <div className="rounded-2xl bg-blue-50 border border-blue-100 p-5 w-full lg:w-64">
               <p className="text-sm text-blue-700 font-medium">
-                Current risk level
+                Availability status
               </p>
 
               <p className="text-3xl font-bold text-blue-700 mt-1">
@@ -423,12 +401,23 @@ const handleStopTracking = async (trackingId) => {
               </p>
 
               <p className="text-sm text-gray-600 mt-2">
-                Risk score: {riskScore} / 8
+                Risk score:{" "}
+                <span className="font-bold text-gray-900">
+                  {riskScore} / 8
+                </span>
+              </p>
+
+              <p className="text-xs text-gray-500 mt-1">
+                {warningCount === 0
+                  ? "No warning signals detected."
+                  : `${warningCount} warning signal${
+                      warningCount > 1 ? "s" : ""
+                    } detected. Some signals carry more weight than others.`}
               </p>
 
               <div className="h-2 bg-white rounded-full overflow-hidden mt-3">
                 <div
-                  className="h-full rounded-full bg-green-500"
+                  className="h-full rounded-full bg-blue-600"
                   style={{
                     width: `${Math.min((riskScore / 8) * 100, 100)}%`,
                   }}
@@ -452,7 +441,7 @@ const handleStopTracking = async (trackingId) => {
 
           <button
             onClick={onReset}
-            className="mt-5 bg-blue-600 text-white px-8 py-3 rounded-xl text-sm font-medium hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-300 shadow-sm"
+            className="mt-5 bg-blue-600 text-white px-8 py-3 rounded-xl text-sm font-medium hover:bg-blue-700 transition"
           >
             Analyze Another Product
           </button>
@@ -460,10 +449,6 @@ const handleStopTracking = async (trackingId) => {
 
         <footer className="text-center text-xs text-gray-400 pb-4">
           <p>Smart Buy Window · Purchase Timing Intelligence</p>
-          <p className="mt-1">
-            Powered by historical pricing signals, availability risk, and
-            multi-horizon machine learning.
-          </p>
         </footer>
       </div>
 
@@ -476,14 +461,14 @@ const handleStopTracking = async (trackingId) => {
       )}
 
       {showTrackedProductsModal && (
-  <TrackedProductsModal
-    items={trackedProducts}
-    loading={trackedProductsLoading}
-    error={trackedProductsError}
-    onClose={() => setShowTrackedProductsModal(false)}
-    onStopTracking={handleStopTracking}
-  />
-)}
+        <TrackedProductsModal
+          items={trackedProducts}
+          loading={trackedProductsLoading}
+          error={trackedProductsError}
+          onClose={() => setShowTrackedProductsModal(false)}
+          onStopTracking={handleStopTracking}
+        />
+      )}
     </div>
   )
 }

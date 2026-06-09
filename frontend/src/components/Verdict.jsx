@@ -1,19 +1,21 @@
 function Verdict({ recommendation, confidence, reason, recommended_window }) {
-  const rec = String(recommendation || "uncertain").toLowerCase()
+  const rec = String(recommendation || "uncertain").trim().toLowerCase()
   const confidencePercent = Math.round((confidence || 0) * 100)
 
   const explanationParts =
     typeof reason === "string"
       ? reason
-          .split(/(?=Price outlook:|Availability signal:|Combined recommendation:|Suggested action:)/)
+          .split(
+            /(?=Price outlook:|Availability signal:|Combined recommendation:|Suggested action:)/
+          )
           .filter(Boolean)
       : []
 
   const titleMap = {
-    "Price outlook": "📉 Price Outlook",
-    "Availability signal": "⚠️ Availability Signal",
-    "Combined recommendation": "🧠 Final Decision",
-    "Suggested action": "✅ Suggested Action",
+    "Price outlook": "Price outlook",
+    "Availability signal": "Availability check",
+    "Combined recommendation": "Final recommendation",
+    "Suggested action": "What to do next",
   }
 
   const config =
@@ -21,8 +23,8 @@ function Verdict({ recommendation, confidence, reason, recommended_window }) {
       ? {
           label: "Buy Now",
           badge: "BUY NOW",
-          headline: "Buying now is the safer choice",
-          subtext: "The models do not show a strong enough price-drop signal.",
+          headline: "This looks like a reasonable time to buy",
+          subtext: "The chance of a better price soon appears low.",
           card: "bg-green-50 border-green-100 shadow-green-100",
           text: "text-green-700",
           badgeStyle: "bg-green-100 text-green-700",
@@ -33,46 +35,46 @@ function Verdict({ recommendation, confidence, reason, recommended_window }) {
       ? {
           label: "Wait",
           badge: "WAIT",
-          headline: "Waiting may be worth it",
-          subtext: "The model sees a stronger chance of a meaningful price drop.",
+          headline: "Waiting may get you a better price",
+          subtext: "The price history suggests a stronger chance of a lower price.",
           card: "bg-blue-50 border-blue-100 shadow-blue-100",
           text: "text-blue-700",
           badgeStyle: "bg-blue-100 text-blue-700",
           bar: "bg-blue-600",
           icon: "↓",
         }
-      : rec === "wait_with_caution"
+      : rec === "wait_caution"
       ? {
-          label: "Wait With Caution",
+          label: "Wait with Caution",
           badge: "WAIT WITH CAUTION",
-          headline: "Waiting may help, but monitor the product",
+          headline: "Waiting may help, but keep an eye on availability",
           subtext:
-            "There may be a price opportunity, but availability risk is not fully low.",
-          card: "bg-amber-50 border-amber-100 shadow-amber-100",
-          text: "text-amber-700",
-          badgeStyle: "bg-amber-100 text-amber-700",
-          bar: "bg-amber-500",
+            "The price opportunity is promising, but the product shows some availability warning signs.",
+          card: "bg-blue-50 border-blue-100 shadow-blue-100",
+          text: "text-blue-700",
+          badgeStyle: "bg-blue-100 text-blue-700",
+          bar: "bg-blue-600",
           icon: "!",
         }
-      : rec === "wait_and_track"
+      : rec === "wait_track"
       ? {
-          label: "Wait & Track",
-          badge: "WAIT & TRACK",
-          headline: "Track this product before buying",
+          label: "Wait and Track",
+          badge: "WAIT AND TRACK",
+          headline: "Track the product before buying",
           subtext:
-            "A longer-window opportunity may exist, but the price should be monitored actively.",
-          card: "bg-indigo-50 border-indigo-100 shadow-indigo-100",
-          text: "text-indigo-700",
-          badgeStyle: "bg-indigo-100 text-indigo-700",
-          bar: "bg-indigo-600",
+            "A better price may appear in the longer window, so active monitoring is recommended.",
+          card: "bg-blue-50 border-blue-100 shadow-blue-100",
+          text: "text-blue-700",
+          badgeStyle: "bg-blue-100 text-blue-700",
+          bar: "bg-blue-600",
           icon: "↗",
         }
       : {
           label: "Uncertain",
           badge: "UNCERTAIN",
-          headline: "No strong action signal",
+          headline: "There is no clear buy-or-wait signal",
           subtext:
-            "The model does not have enough confidence for a clear buy or wait decision.",
+            "The product does not show enough evidence for a strong recommendation right now.",
           card: "bg-yellow-50 border-yellow-100 shadow-yellow-100",
           text: "text-yellow-700",
           badgeStyle: "bg-yellow-100 text-yellow-700",
@@ -82,15 +84,15 @@ function Verdict({ recommendation, confidence, reason, recommended_window }) {
 
   const confidenceLabel =
     confidencePercent >= 75
-      ? "High confidence"
+      ? "Strong signal"
       : confidencePercent >= 50
-      ? "Moderate confidence"
-      : "Low confidence"
+      ? "Moderate signal"
+      : "Weak signal"
 
   return (
-    <section className={`rounded-3xl border shadow-lg p-6 md:p-8 ${config.card}`}>
-      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
-        <div className="flex-1">
+    <section className={`rounded-3xl border shadow-md p-6 md:p-8 ${config.card}`}>
+      <div className="grid lg:grid-cols-[1fr_260px] gap-8 items-center">
+        <div>
           <div className="flex flex-wrap items-center gap-3">
             <span
               className={`inline-flex rounded-full px-4 py-2 text-sm font-bold tracking-wide ${config.badgeStyle}`}
@@ -128,9 +130,9 @@ function Verdict({ recommendation, confidence, reason, recommended_window }) {
           </div>
         </div>
 
-        <div className="bg-white/95 rounded-3xl border border-white p-6 w-full xl:w-80">
+        <div className="bg-white/95 rounded-3xl border border-white p-6">
           <p className="text-sm font-semibold text-gray-500">
-            Chance of lower price
+            Chance of a lower price
           </p>
 
           <div className="flex items-end justify-between mt-2">
@@ -143,15 +145,9 @@ function Verdict({ recommendation, confidence, reason, recommended_window }) {
             </p>
           </div>
 
-          {recommended_window && (
-            <p className="text-xs font-medium text-gray-500 mt-3">
-              Selected window: {recommended_window}
-            </p>
-          )}
-
           <div className="mt-5">
             <div className="flex justify-between text-xs text-gray-500 mb-2">
-              <span>Model probability</span>
+              <span>Price signal</span>
               <span>{confidencePercent}%</span>
             </div>
 
