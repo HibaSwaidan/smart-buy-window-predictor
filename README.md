@@ -106,15 +106,6 @@ target_price = current_price - max(current_price × 0.05, 5)
 
 Tracking requests are stored in Supabase PostgreSQL and can be cancelled by the user.
 
-Current tracking functionality includes:
-
-* save tracking request
-* view tracked products by email
-* cancel tracking request
-* automatic meaningful-drop target calculation
-
-Automated scheduled price checks and email alerts are planned as future extensions.
-
 ---
 
 ## Live Deployment
