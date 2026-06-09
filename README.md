@@ -626,18 +626,13 @@ Main limitations:
 
 3. **Dataset coverage is limited**
    The training data covers 922 ASINs across six product categories. Broader production deployment would require more categories and a larger product set.
-
-4. **Tracking is not yet a full alerting system**
-   Users can save and cancel tracking requests. Automated scheduled checks and email notifications are planned as future work.
-
+   
 ---
 
 ## Future Work
 
 Planned extensions include:
 
-* scheduled daily price checks for active tracked products
-* email notifications when the target price is reached
 * larger product dataset
 * additional Amazon categories
 * category-specific calibration
@@ -645,21 +640,6 @@ Planned extensions include:
 * user accounts for saved tracking history
 * deployment monitoring and logging dashboard
 
----
-
-## Team
-
-Team 15
-
-* Hiba Swaidan
-* Ayat Nassar
-* Fatima Al Amine
-
-Course:
-
-```text
-Introduction to Machine Learning · EECE 490
-```
 
 ---
 
